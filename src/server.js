@@ -63,6 +63,11 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Логирование SESSION_SECRET (для отладки)
+const sessionSecret = process.env.SESSION_SECRET || "handwood-secret-key";
+console.log("🔑 SESSION_SECRET установлен:", sessionSecret ? "✅ ДА" : "❌ НЕТ");
+console.log("🔑 SESSION_SECRET длина:", sessionSecret.length, "символов");
+
 // Настройка сессий с SQLite Store для production
 const sessionStore = new SQLiteStore({
   db: "sessions.db",
@@ -71,7 +76,7 @@ const sessionStore = new SQLiteStore({
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "handwood-secret-key",
+    secret: sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -324,29 +329,39 @@ app.post("/admin/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    console.log("🔐 Попытка входа с пользователем:", username);
+    
     const admin = await getAdminByUsername(username);
 
     if (!admin) {
+      console.log("❌ Пользователь не найден:", username);
       return res.render("admin/login", {
         title: "Вход в админ панель",
         error: "Неверное имя пользователя или пароль",
       });
     }
 
+    console.log("✅ Пользователь найден, проверяю пароль...");
+    
     const isPasswordValid = await bcrypt.compare(password, admin.password);
 
     if (!isPasswordValid) {
+      console.log("❌ Пароль неверный для пользователя:", username);
       return res.render("admin/login", {
         title: "Вход в админ панель",
         error: "Неверное имя пользователя или пароль",
       });
     }
 
+    console.log("✅ Пароль верный! Создаю сессию для пользователя:", username);
+    
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
+    
+    console.log("✅ Сессия создана, redirect на /admin");
     res.redirect("/admin");
   } catch (error) {
-    console.error("Ошибка при входе:", error);
+    console.error("❌ Ошибка при входе:", error);
     res.render("admin/login", {
       title: "Вход в админ панель",
       error: "Ошибка сервера",
