@@ -74,6 +74,13 @@ const sessionStore = new SQLiteStore({
   dir: path.join(__dirname, ".."),
 });
 
+// Определяем secure флаг
+const isProduction = process.env.NODE_ENV === "production";
+const isSecure = isProduction || process.env.RAILWAY_ENVIRONMENT === "production";
+
+console.log("🔒 Cookies secure flag:", isSecure ? "true (HTTPS)" : "false (HTTP)");
+console.log("🔒 Node environment:", process.env.NODE_ENV);
+
 app.use(
   session({
     secret: sessionSecret,
@@ -81,7 +88,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // true для HTTPS в production
+      secure: isSecure, // true для HTTPS в production
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 часа
     },
@@ -95,9 +102,16 @@ app.use("/scripts", express.static(path.join(__dirname, "scripts")));
 
 // Middleware для проверки авторизации
 const requireAdmin = (req, res, next) => {
+  console.log("🔐 Проверка доступа к /admin");
+  console.log("   Session ID:", req.sessionID);
+  console.log("   adminId в сессии:", req.session.adminId);
+  console.log("   Вся сессия:", req.session);
+  
   if (!req.session.adminId) {
+    console.log("❌ adminId НЕ найден в сессии, редирект на /admin/login");
     return res.redirect("/admin/login");
   }
+  console.log("✅ adminId найден в сессии:", req.session.adminId);
   next();
 };
 
@@ -358,8 +372,22 @@ app.post("/admin/login", async (req, res) => {
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
     
-    console.log("✅ Сессия создана, redirect на /admin");
-    res.redirect("/admin");
+    // Сохраняем сессию и затем редиректим
+    req.session.save((err) => {
+      if (err) {
+        console.error("❌ Ошибка сохранения сессии:", err);
+        return res.render("admin/login", {
+          title: "Вход в админ панель",
+          error: "Ошибка при создании сессии",
+        });
+      }
+      
+      console.log("✅ Сессия сохранена!");
+      console.log("✅ ID сессии:", req.sessionID);
+      console.log("✅ adminId в сессии:", req.session.adminId);
+      console.log("✅ Redirect на /admin");
+      res.redirect("/admin");
+    });
   } catch (error) {
     console.error("❌ Ошибка при входе:", error);
     res.render("admin/login", {
