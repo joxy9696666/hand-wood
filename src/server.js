@@ -5,6 +5,7 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const SQLiteStore = require("connect-sqlite3")(session);
 require("dotenv").config();
 
 const { createFirstAdmin } = require("./scripts/init-admin");
@@ -62,14 +63,20 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Настройка сессий
+// Настройка сессий с SQLite Store для production
+const sessionStore = new SQLiteStore({
+  db: "sessions.db",
+  dir: path.join(__dirname, ".."),
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "handwood-secret-key",
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true if using HTTPS
+      secure: process.env.NODE_ENV === "production", // true для HTTPS в production
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 часа
     },

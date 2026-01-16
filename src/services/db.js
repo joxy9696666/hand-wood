@@ -92,42 +92,39 @@ function initDatabase() {
       }
 
       const existingColumns = columns.map((col) => col.name);
-      console.log("📋 Существующие колонки:", existingColumns);
+      console.log("📋 Существующие колонки:", existingColumns.length > 0 ? existingColumns : "Таблица пуста");
 
       let addedCount = 0;
       let checkedCount = 0;
+      const columnsToAdd = newColumns.filter((c) => !existingColumns.includes(c));
 
-      newColumns.forEach((columnName) => {
-        if (!existingColumns.includes(columnName)) {
-          const query = `ALTER TABLE products ADD COLUMN ${columnName} TEXT`;
-          db.run(query, (err) => {
-            checkedCount++;
-            if (err) {
-              console.error(`❌ Ошибка добавления колонки ${columnName}:`, err);
-            } else {
-              addedCount++;
-              console.log(`✅ Колонка ${columnName} успешно добавлена`);
-            }
-
-            // Когда все проверено, выводим итог
-            if (
-              checkedCount ===
-              newColumns.filter((c) => !existingColumns.includes(c)).length
-            ) {
-              console.log(
-                `\n✨ Миграция завершена! Добавлено колонок: ${addedCount}`
-              );
-            }
-          });
-        }
-      });
-
-      // Если все колонки уже есть
-      if (newColumns.every((c) => existingColumns.includes(c))) {
-        console.log(
-          "✅ Все необходимые колонки уже существуют. Миграция не требуется."
-        );
+      if (columnsToAdd.length === 0) {
+        console.log("✅ Все необходимые колонки уже существуют. Миграция не требуется.");
+        return;
       }
+
+      columnsToAdd.forEach((columnName) => {
+        const query = `ALTER TABLE products ADD COLUMN ${columnName} TEXT`;
+        db.run(query, (err) => {
+          checkedCount++;
+          if (err) {
+            // Игнорируем ошибки дублирования - колонка уже существует
+            if (err.message && err.message.includes("duplicate column")) {
+              console.log(`⚠️  Колонка ${columnName} уже существует, пропускаем`);
+            } else {
+              console.error(`❌ Ошибка добавления колонки ${columnName}:`, err.message);
+            }
+          } else {
+            addedCount++;
+            console.log(`✅ Колонка ${columnName} успешно добавлена`);
+          }
+
+          // Когда все проверено, выводим итог
+          if (checkedCount === columnsToAdd.length) {
+            console.log(`\n✨ Миграция завершена! Добавлено колонок: ${addedCount}`);
+          }
+        });
+      });
     });
   };
 
