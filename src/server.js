@@ -6,6 +6,7 @@ const multer = require("multer");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const SQLiteStore = require("connect-sqlite3")(session);
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const { createFirstAdmin } = require("./scripts/init-admin");
@@ -62,6 +63,16 @@ app.set("views", path.join(__dirname, "views"));
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Логирование сессий (для отладки)
+app.use((req, res, next) => {
+  console.log(`\n📍 ${req.method} ${req.path}`);
+  console.log(`   Session ID: ${req.sessionID}`);
+  console.log(`   adminId: ${req.session.adminId || "undefined"}`);
+  console.log(`   Cookies: ${JSON.stringify(req.cookies || {})}`);
+  next();
+});
 
 // Логирование SESSION_SECRET (для отладки)
 const sessionSecret = process.env.SESSION_SECRET || "handwood-secret-key";
