@@ -1,0 +1,206 @@
+<%
+  var content = `
+    <!-- Hero секция категории -->
+    <section class="category-hero">
+      <div class="container">
+        <!-- Хлебные крошки навигация -->
+        <nav class="breadcrumb" aria-label="Навигация">
+          <a href="/" class="breadcrumb-link">🏠 Главная</a>
+          <span class="breadcrumb-separator">/</span>
+          <a href="/gallery" class="breadcrumb-link">📋 Каталог</a>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">${category.name}</span>
+        </nav>
+
+        <!-- Заголовок категории -->
+        <div class="category-header">
+          <div class="category-header-content">
+            <h1 class="category-title">${category.name}</h1>
+            ${category.description ? '<p class="category-subtitle">' + category.description + '</p>' : '<p class="category-subtitle">Коллекция уникальных изделий ручной работы</p>'}
+            <div class="category-stats">
+              <div class="stat-item">
+                <span class="stat-number">${products.length}</span>
+                <span class="stat-label">товаров</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">✨</span>
+                <span class="stat-label">Ручная работа</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">🎯</span>
+                <span class="stat-label">Выбор мастера</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Основная секция товаров -->
+    <section class="section gallery-section">
+      <div class="container">
+        <!-- Контролы -->
+        <div class="gallery-controls-wrapper">
+          <div class="gallery-controls">
+            <a href="/gallery" class="btn btn-outline">
+              <span>←</span> Вернуться в каталог
+            </a>
+            <div class="controls-spacer"></div>
+            <span class="gallery-count-badge">
+              Показано: <strong>${products.length}</strong>
+            </span>
+          </div>
+        </div>
+
+        <!-- Сетка товаров -->
+        <div class="gallery-grid" role="region" aria-label="Товары в категории ${category.name}">` +
+          products.map(product => {
+            const hasImage = product.image_path;
+            const alt = product.name || 'Товар';
+            const price = product.price || '';
+            const desc = product.description || '';
+            const imageUrl = hasImage ? product.image_path : 'https://via.placeholder.com/400x300';
+            
+            return `<a href="/product/${product.id}" class="gallery-item-link" title="${alt}">
+              <div class="gallery-item" role="article">
+                <div class="gallery-item-image">
+                  <picture>
+                    ${hasImage ? 
+                      `<source data-srcset="${imageUrl}?w=800&q=80&fm=webp" type="image/webp">` :
+                      `<source data-srcset="https://via.placeholder.com/400x300.webp" type="image/webp">`
+                    }
+                    <img 
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='400 300'%3E%3C/svg%3E"
+                      data-src="${imageUrl}?w=800&q=80" 
+                      alt="${alt}" 
+                      class="lazy-img"
+                      loading="lazy"
+                      width="400"
+                      height="300">
+                  </picture>
+                  <div class="gallery-item-overlay">
+                    <span class="gallery-item-action">Подробнее →</span>
+                  </div>
+                </div>
+                <div class="gallery-item-content">
+                  <h3 class="gallery-item-title">${alt}</h3>
+                  ${desc ? '<p class="gallery-item-description">' + desc + '</p>' : ''}
+                  <div class="gallery-item-meta">
+                    ${price ? '<p class="gallery-item-price">' + price + ' ₽</p>' : ''}
+                  </div>
+                </div>
+              </div>
+            </a>`;
+          }).join('') +
+          (products.length === 0 ? `
+            <div class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <h3>Товаров не найдено</h3>
+              <p>В этой категории пока нет товаров. Пожалуйста, проверьте позже.</p>
+              <a href="/gallery" class="btn btn-primary" style="margin-top: 1.5rem;">Вернуться в каталог</a>
+            </div>
+          ` : '') + `
+        </div>
+
+        <!-- Информационный блок -->
+        <div class="category-info-block">
+          <h3>О категории</h3>
+          <p>
+            Все изделия в этой категории изготавливаются с использованием современных технологий и традиционных методов мастерства. 
+            Каждый предмет уникален и создан с особой тщательностью к деталям.
+          </p>
+          <div class="category-features">
+            <div class="feature">
+              <span class="feature-icon">🎨</span>
+              <span>Уникальный дизайн</span>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">✅</span>
+              <span>Гарантия качества</span>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">📦</span>
+              <span>Безопасная доставка</span>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">💬</span>
+              <span>Поддержка мастера</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // Lazy loading для текущей категории
+      if (window.lazyLoadUtils && window.lazyLoadUtils.updateLazyLoading) {
+        document.addEventListener('DOMContentLoaded', function() {
+          setTimeout(() => {
+            window.lazyLoadUtils.updateLazyLoading();
+          }, 100);
+        });
+      }
+    </script>
+  `;
+          products.map(product => {
+            const hasImage = product.image_path;
+            const alt = product.name || 'Товар';
+            const price = product.price || '';
+            const desc = product.description || '';
+            const imageUrl = hasImage ? product.image_path : 'https://via.placeholder.com/400x300';
+            
+            return `<a href="/product/${product.id}" class="gallery-item-link" title="${alt}">
+              <div class="gallery-item" role="article">
+                <div class="gallery-item-image">
+                  <picture>
+                    ${hasImage ? 
+                      `<source data-srcset="${imageUrl}?w=800&q=80&fm=webp" type="image/webp">` :
+                      `<source data-srcset="https://via.placeholder.com/400x300.webp" type="image/webp">`
+                    }
+                    <img 
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='400 300'%3E%3C/svg%3E"
+                      data-src="${imageUrl}?w=800&q=80" 
+                      alt="${alt}" 
+                      class="lazy-img"
+                      loading="lazy"
+                      width="400"
+                      height="300">
+                  </picture>
+                  <div class="gallery-item-overlay">
+                    <span class="gallery-item-action">Подробнее →</span>
+                  </div>
+                </div>
+                <div class="gallery-item-content">
+                  <h3 class="gallery-item-title">${alt}</h3>
+                  ${desc ? '<p class="gallery-item-description">' + desc + '</p>' : ''}
+                  <div class="gallery-item-meta">
+                    ${price ? '<p class="gallery-item-price" style="color: var(--color-accent-warm); font-weight: 600; margin-bottom: 0.4rem;">' + price + ' ₽</p>' : ''}
+                  </div>
+                </div>
+              </div>
+            </a>`;
+          }).join('') +
+          (products.length === 0 ? `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;">
+              <p style="font-size: 1.1rem; color: var(--color-text-secondary);">
+                В этой категории пока нет товаров. Пожалуйста, проверьте позже.
+              </p>
+            </div>
+          ` : '') + `
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // Lazy loading для текущей категории
+      if (window.lazyLoadUtils && window.lazyLoadUtils.updateLazyLoading) {
+        document.addEventListener('DOMContentLoaded', function() {
+          setTimeout(() => {
+            window.lazyLoadUtils.updateLazyLoading();
+          }, 100);
+        });
+      }
+    </script>
+  `;
+%>
+<%- include('layouts/main', { title: category.name + ' — HandWood', description: 'Категория: ' + category.name + '. Изделия из дерева, металла и 3D-печати.', content }) %>

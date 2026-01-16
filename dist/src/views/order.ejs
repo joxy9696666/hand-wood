@@ -1,0 +1,191 @@
+<% 
+  var content = `
+    <section class="section order-section">
+      <div class="container">
+        <div class="section-title">
+          <h1>Оформить заказ</h1>
+          <p class="subtitle">Оставьте ваше сообщение и мы свяжемся в ближайшее время</p>
+          <p class="section-description" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto;">Заполните форму с деталями вашего заказа, и наши специалисты проконсультируют вас по каждому вопросу.</p>
+        </div>
+        
+        <div style="max-width: 700px; margin: 0 auto;">
+          <form id="order-form" action="/api/order" method="POST" class="order-form">
+            <fieldset class="form-group">
+              <legend style="display: none;">Заказ изделия</legend>
+              
+              <div class="form-field">
+                <label for="name">Ваше имя <span class="form-required">*</span></label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  required 
+                  placeholder="Иван Петров"
+                  aria-label="Ваше имя"
+                  aria-required="true">
+              </div>
+
+              <div class="form-field">
+                <label for="phone">Номер телефона <span class="form-required">*</span></label>
+                <input 
+                  type="tel" 
+                  id="phone" 
+                  name="phone" 
+                  required 
+                  placeholder="+373 22 123456"
+                  aria-label="Номер телефона"
+                  aria-required="true"
+                  aria-describedby="phone-hint">
+                <small id="phone-hint">Например: +373 22 123456</small>
+              </div>
+
+              <div class="form-field">
+                <label for="email">Email</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  placeholder="your@email.com"
+                  aria-label="Ваш email">
+              </div>
+
+              <div class="form-field">
+                <label for="subject">Тема заказа <span class="form-required">*</span></label>
+                <select 
+                  id="subject" 
+                  name="subject" 
+                  required
+                  aria-label="Выберите категорию"
+                  aria-required="true">
+                  <option value="">— Выберите категорию —</option>
+                  <option value="wood">🪵 Изделия из дерева</option>
+                  <option value="icons">⛪ Иконы и культурные изделия</option>
+                  <option value="forging">⚙️ Художественная ковка</option>
+                  <option value="3d">🖨️ 3D-технологии</option>
+                  <option value="custom">🎨 Индивидуальный проект</option>
+                  <option value="partnership">🤝 B2B сотрудничество</option>
+                  <option value="other">➕ Другое</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="message">Описание вашего запроса <span class="form-required">*</span></label>
+                <textarea 
+                  id="message" 
+                  name="message" 
+                  rows="6" 
+                  required
+                  placeholder="Расскажите о вашей идее, желаемых характеристиках товара, сроках и бюджете..."
+                  aria-label="Описание заказа"
+                  aria-required="true"></textarea>
+              </div>
+
+              <button type="submit" class="btn-primary form-submit">
+                <span>Отправить заказ</span>
+              </button>
+
+              <p class="form-hint">
+                <span class="form-required">*</span> — обязательные поля
+              </p>
+            </fieldset>
+          </form>
+
+          <div class="order-contacts">
+            <h3>Или свяжитесь с нами напрямую</h3>
+            <p class="section-description">
+              Выберите удобный способ общения:
+            </p>
+            <div class="social-icons order-social">
+              <a href="https://api.whatsapp.com/send/?phone=37360860100&text&type=phone_number&app_absent=0" target="_blank" rel="noopener noreferrer" title="Напишите нам в WhatsApp"><img src="/icons/whatsapp.svg" alt="WhatsApp"></a>
+              <a href="viber://chat?number=%2B37360860100" target="_blank" rel="noopener noreferrer" title="Свяжитесь через Viber"><img src="/icons/viber.svg" alt="Viber"></a>
+              <a href="https://t.me/Hand_Wood_MD" target="_blank" rel="noopener noreferrer" title="Напишите нам в Telegram"><img src="/icons/telegram.svg" alt="Telegram"></a>
+              <a href="https://www.instagram.com/handwoodmd?igsh=dXIwM2x3b2w3bGg3" target="_blank" rel="noopener noreferrer" title="Посетите наш Instagram"><img src="/icons/instagram.svg" alt="Instagram"></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      const form = document.getElementById('order-form');
+      const inputs = form.querySelectorAll('input, textarea, select');
+      
+      // Сохраняем и восстанавливаем значения формы
+      inputs.forEach(input => {
+        const savedValue = localStorage.getItem('form_' + input.name);
+        if (savedValue) input.value = savedValue;
+        
+        input.addEventListener('change', () => {
+          localStorage.setItem('form_' + input.name, input.value);
+        });
+      });
+      
+      // Обработка отправки формы
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Валидация на клиенте
+        const name = formData.get('name')?.trim();
+        const phone = formData.get('phone')?.trim();
+        const message = formData.get('message')?.trim();
+        const subject = formData.get('subject')?.trim();
+        
+        if (!name || name.length < 2) {
+          alert('Пожалуйста, введите ваше имя (минимум 2 символа)');
+          return;
+        }
+        
+        if (!phone) {
+          alert('Пожалуйста, укажите ваш номер телефона');
+          return;
+        }
+        
+        if (!subject) {
+          alert('Пожалуйста, выберите тему заказа');
+          return;
+        }
+        
+        if (!message || message.length < 10) {
+          alert('Пожалуйста, напишите подробное описание (минимум 10 символов)');
+          return;
+        }
+        
+        // Отправка формы
+        submitBtn.innerHTML = '<span>Отправка...</span>';
+        submitBtn.disabled = true;
+        
+        try {
+          const response = await fetch('/api/order', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            alert(result.message || 'Спасибо! Ваше сообщение отправлено. Мы свяжемся с вами в ближайшее время.');
+            this.reset();
+            // Очищаем localStorage
+            inputs.forEach(input => {
+              localStorage.removeItem('form_' + input.name);
+            });
+          } else {
+            alert('Ошибка: ' + (result.message || 'Не удалось отправить сообщение'));
+          }
+        } catch (error) {
+          console.error('Ошибка:', error);
+          alert('Ошибка сети. Пожалуйста, попробуйте позже или напишите нам в WhatsApp.');
+        } finally {
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  `;
+%>
+
+<%- include('layouts/main', { title: 'Заказать изделие — HandWood', description: 'Форма заказа изделий из дерева, металла и 3D-печати', content: content }) %>

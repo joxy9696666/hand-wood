@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление категориями — HandWood</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/admin.css">
+    <style>
+      /* ===== КАТЕГОРИИ - АДАПТИВНАЯ СЕТКА ===== */
+
+      .categories-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .category-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s;
+        background: #fafaf8;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .category-card:hover {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        border-color: #8B5E3C;
+        background: white;
+        transform: translateY(-2px);
+      }
+
+      .category-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .category-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+      }
+
+      .category-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #4A2C1F;
+        line-height: 1.3;
+      }
+
+      .category-desc {
+        color: #666;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .category-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        margin-top: 0.8rem;
+        font-size: 0.85rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid #f0f0f0;
+      }
+
+      .product-count {
+        color: #8B5E3C;
+        font-weight: 600;
+      }
+
+      .date-created {
+        color: #999;
+        font-size: 0.8rem;
+      }
+
+      .category-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: auto;
+        padding-top: 1rem;
+      }
+
+      .btn-action {
+        padding: 0.6rem 0.8rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-align: center;
+        font-size: 0.85rem;
+        text-decoration: none;
+        display: inline-block;
+        flex: 1;
+        white-space: nowrap;
+      }
+
+      .btn-edit {
+        background: #2196F3;
+        color: white;
+      }
+
+      .btn-edit:hover {
+        background: #0b7dda;
+      }
+
+      .btn-delete {
+        background: #f44336;
+        color: white;
+      }
+
+      .btn-delete:hover {
+        background: #da190b;
+      }
+
+      .btn-view {
+        background: #666;
+        color: white;
+      }
+
+      .btn-view:hover {
+        background: #555;
+      }
+
+      /* ===== ФОРМА РЕДАКТИРОВАНИЯ ===== */
+      .category-form-edit {
+        background: #f5f3f0;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        display: none;
+      }
+
+      .category-form-edit.active {
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .category-form-edit input,
+      .category-form-edit textarea {
+        padding: 0.6rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.9rem;
+      }
+
+      .category-form-edit input:focus,
+      .category-form-edit textarea:focus {
+        outline: none;
+        border-color: #8B5E3C;
+        box-shadow: 0 0 0 2px rgba(139, 94, 60, 0.1);
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.6rem;
+      }
+
+      .btn-submit {
+        padding: 0.8rem 1.6rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+        background: linear-gradient(135deg, #8B5E3C, #d47052);
+        color: white;
+        width: 100%;
+      }
+
+      .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(212, 112, 74, 0.3);
+      }
+
+      .btn-save {
+        background: #4CAF50;
+        color: white;
+        flex: 1;
+      }
+
+      .btn-save:hover {
+        background: #45a049;
+      }
+
+      .btn-cancel {
+        background: #999;
+        color: white;
+        flex: 1;
+      }
+
+      .btn-cancel:hover {
+        background: #777;
+      }
+
+      .btn-cancel:hover {
+        background: #777;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+
+      .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      .empty-state p {
+        color: #666;
+        font-size: 1rem;
+      }
+
+      /* ===== АДАПТИВНОСТЬ ===== */
+      /* ПК версия: 4-6 в ряд */
+      @media (min-width: 1400px) {
+        .categories-list {
+          grid-template-columns: repeat(6, 1fr);
+        }
+      }
+
+      @media (min-width: 1200px) and (max-width: 1399px) {
+        .categories-list {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+
+      @media (min-width: 1024px) and (max-width: 1199px) {
+        .categories-list {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      /* Планшет: 2-3 в ряд */
+      @media (min-width: 768px) and (max-width: 1023px) {
+        .categories-list {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .category-card {
+          padding: 1rem;
+        }
+
+        .btn-action {
+          padding: 0.5rem 0.6rem;
+          font-size: 0.8rem;
+        }
+      }
+
+      @media (min-width: 600px) and (max-width: 767px) {
+        .categories-list {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* Телефон: 1 в ряд */
+      @media (max-width: 599px) {
+        .categories-list {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .category-card {
+          padding: 1rem;
+        }
+
+        .category-actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.5rem;
+        }
+
+        .btn-action {
+          padding: 0.5rem;
+          font-size: 0.75rem;
+        }
+
+        .category-form-edit {
+          padding: 0.8rem;
+        }
+
+        .form-actions {
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+
+        .btn-save,
+        .btn-cancel {
+          padding: 0.6rem;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-logo">
+          <h2>🎨 HandWood</h2>
+          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin: 0;">Админ панель</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <li><a href="/admin">📊 Панель управления</a></li>
+          <li><a href="/admin/products">📦 Товары</a></li>
+          <li><a href="/admin/categories" class="active">📂 Категории</a></li>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a href="/admin/change-password" class="pwd-btn">🔑 Смена пароля</a>
+          <a href="/admin/logout" class="logout-btn">🚪 Выход</a>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        <div class="admin-topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleMenu()">☰</button>
+            <h1 class="topbar-title">📂 Управление категориями</h1>
+          </div>
+        </div>
+
+        <div class="admin-content">
+          <!-- ФОРМА ДОБАВЛЕНИЯ КАТЕГОРИИ -->
+          <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 2rem;">
+            <h2 style="font-size: 1.3rem; color: #4A2C1F; margin: 0 0 1.5rem 0;">➕ Добавить новую категорию</h2>
+            
+            <form action="/admin/categories" method="POST" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="form-group">
+                <label for="name">Название категории *</label>
+                <input type="text" id="name" name="name" required placeholder="Например: Нарды и шахматы">
+              </div>
+
+              <div class="form-group">
+                <label for="description" style="grid-column: 1 / -1;">Описание категории</label>
+                <textarea id="description" name="description" rows="2" style="grid-column: 1 / -1;" placeholder="Опишите категорию и типы товаров в ней..."></textarea>
+              </div>
+
+              <button type="submit" class="btn-submit" style="grid-column: 1 / -1;">Создать категорию</button>
+            </form>
+          </div>
+
+          <!-- СПИСОК КАТЕГОРИЙ -->
+          <div>
+            <h2 style="font-size: 1.3rem; color: #4A2C1F; margin: 0 0 1.5rem 0;">📂 Существующие категории (всего: <%= categories.length %>)</h2>
+            
+            <% if (categories.length === 0) { %>
+              <div class="empty-state">
+                <div class="empty-state-icon">📂</div>
+                <p>Категорий пока нет. Создайте первую категорию, используя форму выше.</p>
+              </div>
+            <% } else { %>
+              <div class="categories-list">
+                <% categories.forEach(category => {
+                  const productCount = products.filter(p => p.category_id === category.id).length;
+                %>
+                  <div class="category-card">
+                    <div class="category-icon">📂</div>
+                    
+                    <div class="category-info">
+                      <h3 class="category-name"><%= category.name %></h3>
+                      
+                      <% if (category.description) { %>
+                        <p class="category-desc"><%= category.description %></p>
+                      <% } %>
+
+                      <div class="category-meta">
+                        <span class="product-count">📦 <%= productCount %> товаров</span>
+                        <span class="date-created">📅 <%= new Date(category.created_at).toLocaleDateString('ru-RU') %></span>
+                      </div>
+                    </div>
+
+                    <div class="category-actions">
+                      <button class="btn-action btn-edit" onclick="toggleEditForm(<%= category.id %>)">✏️ Редактировать</button>
+                      <form action="/admin/categories/<%= category.id %>/delete" method="POST" style="display: contents;" onsubmit="return confirm('Вы уверены? Товары в категории не будут удалены.');">
+                        <button type="submit" class="btn-action btn-delete">🗑️ Удалить</button>
+                      </form>
+                    </div>
+
+                    <!-- ФОРМА РЕДАКТИРОВАНИЯ -->
+                    <div class="category-form-edit" id="edit-form-<%= category.id %>">
+                      <form action="/admin/categories/<%= category.id %>/update" method="POST" style="display: contents;">
+                        <input type="text" name="name" value="<%= category.name %>" required placeholder="Название категории">
+                        <textarea name="description" rows="2" placeholder="Описание категории"><%= category.description || '' %></textarea>
+
+                        <div class="form-actions" style="grid-column: 1 / -1;">
+                          <button type="submit" class="btn-action btn-save">💾 Сохранить</button>
+                          <button type="button" class="btn-action btn-cancel" onclick="toggleEditForm(<%= category.id %>)">❌ Отмена</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      function toggleMenu() {
+        const sidebar = document.getElementById('adminSidebar');
+        sidebar.classList.toggle('visible');
+        sidebar.classList.toggle('hidden');
+      }
+
+      function toggleEditForm(categoryId) {
+        const form = document.getElementById(`edit-form-${categoryId}`);
+        form.classList.toggle('active');
+      }
+
+      // Закрытие меню при клике на ссылку на мобильных
+      if (window.innerWidth <= 768) {
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+          link.addEventListener('click', () => {
+            const sidebar = document.getElementById('adminSidebar');
+            sidebar.classList.remove('visible');
+            sidebar.classList.add('hidden');
+          });
+        });
+      }
+
+      // Закрывать меню при клике вне его на мобильных
+      document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('adminSidebar');
+        const toggle = document.getElementById('menuToggle');
+        
+        if (window.innerWidth <= 768) {
+          if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.remove('visible');
+          }
+        }
+      });
+    </script>
+</body>
+</html>

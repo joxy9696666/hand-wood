@@ -1,0 +1,221 @@
+#!/usr/bin/env php
+<?php
+/**
+ * PHP адаптер для проксирования запросов к Node.js приложению
+ * Этот файл находится в dist/index.php
+ * 
+ * Использование: Запрос → Apache/Nginx → index.php → Node.js приложение
+ */
+
+// ============================================
+// 1. КОНФИГУРАЦИЯ
+// ============================================
+
+// URL к Node.js приложению (измените перед деплоем)
+$nodeAppUrl = getenv('NODE_APP_URL') ?: getenv('APP_URL') ?: 'http://localhost:3000';
+
+// Папка с публичными файлами
+$publicDir = __DIR__ . '/public';
+
+// Расширения которые обслуживаются как статика
+$staticExtensions = ['js', 'css', 'jpg', 'jpeg', 'png', 'gif', 'svg', 'woff', 'woff2', 'ttf', 'eot', 'webp', 'ico'];
+
+// MIME типы для статических файлов
+$mimeTypes = [
+    'js'    => 'application/javascript',
+    'css'   => 'text/css',
+    'json'  => 'application/json',
+    'jpg'   => 'image/jpeg',
+    'jpeg'  => 'image/jpeg',
+    'png'   => 'image/png',
+    'gif'   => 'image/gif',
+    'svg'   => 'image/svg+xml',
+    'woff'  => 'font/woff',
+    'woff2' => 'font/woff2',
+    'ttf'   => 'font/ttf',
+    'eot'   => 'application/vnd.ms-fontobject',
+    'webp'  => 'image/webp',
+    'ico'   => 'image/x-icon',
+    'html'  => 'text/html; charset=utf-8',
+];
+
+// ============================================
+// 2. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================
+
+/**
+ * Получить расширение файла
+ */
+function getExtension($path) {
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    return $ext;
+}
+
+/**
+ * Определить MIME тип
+ */
+function getMimeType($ext) {
+    global $mimeTypes;
+    return $mimeTypes[$ext] ?? 'application/octet-stream';
+}
+
+/**
+ * Проверить является ли запрос статическим файлом
+ */
+function isStaticFile($path, $publicDir) {
+    global $staticExtensions;
+    
+    $ext = getExtension($path);
+    if (!in_array($ext, $staticExtensions)) {
+        return false;
+    }
+    
+    $filePath = $publicDir . $path;
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Обслужить статический файл
+ */
+function serveStaticFile($path, $publicDir) {
+    $filePath = $publicDir . $path;
+    
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        http_response_code(404);
+        echo "Not Found";
+        exit;
+    }
+    
+    $ext = getExtension($filePath);
+    $mimeType = getMimeType($ext);
+    
+    // Кеширование
+    $lastModified = filemtime($filePath);
+    $etag = md5_file($filePath);
+    
+    header('Content-Type: ' . $mimeType);
+    header('ETag: ' . $etag);
+    header('Cache-Control: public, max-age=31536000'); // 1 год для версионированных файлов
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s T', $lastModified));
+    
+    // If-Modified-Since проверка
+    if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+        $ifModifiedSince = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+        if ($ifModifiedSince >= $lastModified) {
+            http_response_code(304); // Not Modified
+            exit;
+        }
+    }
+    
+    // ETag проверка
+    if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+        if ($_SERVER['HTTP_IF_NONE_MATCH'] === $etag) {
+            http_response_code(304); // Not Modified
+            exit;
+        }
+    }
+    
+    readfile($filePath);
+    exit;
+}
+
+/**
+ * Проксировать запрос к Node.js приложению
+ */
+function proxyToNode($url) {
+    // Получить тело запроса если POST/PUT
+    $input = file_get_contents('php://input');
+    
+    $ch = curl_init();
+    
+    // Основные параметры
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_BINARYTRANSPORT, 1);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Для самоподписанных сертификатов
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    
+    // Метод
+    $method = $_SERVER['REQUEST_METHOD'];
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    
+    // Данные для POST/PUT/DELETE
+    if (!empty($input) && ($method === 'POST' || $method === 'PUT' || $method === 'DELETE')) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $input);
+    }
+    
+    // Заголовки
+    $headers = [];
+    foreach ($_SERVER as $key => $value) {
+        if (strpos($key, 'HTTP_') === 0) {
+            $header = str_replace('HTTP_', '', $key);
+            $header = str_replace('_', '-', $header);
+            $header = ucwords($header, '-');
+            
+            // Пропускаем некоторые заголовки
+            if (!in_array($header, ['Host', 'Connection', 'Content-Length'])) {
+                $headers[] = $header . ': ' . $value;
+            }
+        }
+    }
+    
+    // Content-Type и Content-Length для POST данных
+    if (!empty($input)) {
+        $headers[] = 'Content-Type: ' . ($_SERVER['CONTENT_TYPE'] ?? 'application/x-www-form-urlencoded');
+        $headers[] = 'Content-Length: ' . strlen($input);
+    }
+    
+    if (!empty($headers)) {
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    }
+    
+    // Выполнить запрос
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+    
+    if (curl_errno($ch)) {
+        http_response_code(502);
+        die('Bad Gateway: ' . curl_error($ch));
+    }
+    
+    curl_close($ch);
+    
+    // Установить статус код
+    http_response_code($httpCode);
+    
+    // Установить Content-Type
+    if ($contentType) {
+        header('Content-Type: ' . $contentType);
+    }
+    
+    echo $response;
+    exit;
+}
+
+// ============================================
+// 3. ГЛАВНАЯ ЛОГИКА
+// ============================================
+
+// Получить путь запроса
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$queryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+
+// Проверка: это статический файл?
+if (isStaticFile($requestUri, $publicDir)) {
+    serveStaticFile($requestUri, $publicDir);
+    exit;
+}
+
+// Прочие запросы проксируем на Node.js
+$nodeUrl = $nodeAppUrl . $requestUri;
+if (!empty($queryString)) {
+    $nodeUrl .= '?' . $queryString;
+}
+
+proxyToNode($nodeUrl);

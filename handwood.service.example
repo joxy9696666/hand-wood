@@ -1,0 +1,98 @@
+# Systemd сервис для HandWood
+# Сохраните как: /etc/systemd/system/handwood.service
+# 
+# Использование:
+#   sudo systemctl enable handwood    (автозагрузка)
+#   sudo systemctl start handwood     (запуск)
+#   sudo systemctl stop handwood      (остановка)
+#   sudo systemctl restart handwood   (перезагрузка)
+#   sudo systemctl status handwood    (статус)
+#   sudo journalctl -u handwood -f    (логи в реальном времени)
+
+[Unit]
+Description=HandWood Node.js SSR Application
+Documentation=https://github.com/your/repo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Пользователь от которого запускать приложение
+User=www-data
+Group=www-data
+
+# Директория приложения
+WorkingDirectory=/var/www/handwood
+
+# Команда запуска
+ExecStart=/usr/bin/node /var/www/handwood/src/server.js
+
+# Переменные окружения
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+
+# Настройки процесса
+Type=simple
+Restart=on-failure
+RestartSec=10
+
+# Таймауты
+StartLimitInterval=600
+StartLimitBurst=3
+
+# Логирование
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=handwood
+
+# Файловые дескрипторы (увеличиваем лимит)
+LimitNOFILE=65535
+
+# Память
+# MemoryMax=1G      # Максимум памяти (опционально)
+
+# Хорошие практики
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
+# ========================================
+# Инструкции по установке:
+# ========================================
+#
+# 1. Создайте файл:
+#    sudo nano /etc/systemd/system/handwood.service
+#
+# 2. Вставьте содержимое этого файла
+#
+# 3. Обновите systemd конфигурацию:
+#    sudo systemctl daemon-reload
+#
+# 4. Включите автозагрузку:
+#    sudo systemctl enable handwood
+#
+# 5. Запустите:
+#    sudo systemctl start handwood
+#
+# 6. Проверьте статус:
+#    sudo systemctl status handwood
+#
+# 7. Смотрите логи:
+#    sudo journalctl -u handwood -n 50   # последние 50 строк
+#    sudo journalctl -u handwood -f      # в реальном времени
+#
+# ========================================
+# Полезные команды:
+# ========================================
+#
+# sudo systemctl restart handwood
+# sudo systemctl reload handwood
+# sudo systemctl is-active handwood
+# sudo systemctl is-enabled handwood
+# sudo systemctl disable handwood      # отключить автозагрузку
+#
+# ========================================

@@ -1,0 +1,311 @@
+<% 
+  // Инициализация галереи изображений
+  var galleryImagesData = [];
+  var additionalImages = [];
+  if (product.image_path) {
+    galleryImagesData.push(product.image_path);
+  }
+  if (images && images.length > 0) {
+    // Фильтруем изображения, исключая главную фотографию
+    additionalImages = images.filter(img => img.image_path !== product.image_path);
+    galleryImagesData = galleryImagesData.concat(additionalImages.map(img => img.image_path));
+  }
+
+  var content = `
+    <section class="section">
+      <div class="container">
+        <!-- Хлебная крошка -->
+        <div class="breadcrumb">
+          <a href="/">Главная</a>
+          <span>/</span>
+          <a href="/gallery">Каталог</a>
+          <span>/</span>
+          ${product.category_name ? `<a href="/category/${product.category_id}">${product.category_name}</a>` : '<span>Товары</span>'}
+          <span>/</span>
+          <span style="color: var(--color-text-primary); font-weight: 600;">${product.name}</span>
+        </div>
+
+        <div class="product-grid">
+          <!-- Галерея изображений -->
+          <div class="product-images">
+            <div class="main-image-container">
+              <div id="main-image" class="main-image-wrapper gallery-trigger" style="cursor: pointer;">
+                ${product.image_path ? 
+                  `<img src="${product.image_path}" alt="${product.name}" class="main-product-image" loading="eager">` :
+                  `<img src="https://via.placeholder.com/500x500?text=${encodeURIComponent(product.name)}" alt="${product.name}" class="main-product-image" loading="eager">`
+                }
+              </div>
+            </div>
+
+            <!-- Миниатюры изображений с lazy loading -->
+            ${additionalImages && additionalImages.length > 0 ? `
+              <div class="thumbnails-container">
+                ${additionalImages.map((img, idx) => `
+                  <div class="thumbnail-container gallery-trigger" data-index="${idx + 1}">
+                    <img 
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='80 80'%3E%3C/svg%3E"
+                      data-src="${img.image_path}?w=150&q=80" 
+                      alt="фото ${idx + 1}" 
+                      class="lazy-img thumbnail-img">
+                    <noscript>
+                      <img 
+                        src="${img.image_path}" 
+                        alt="фото ${idx + 1}">
+                    </noscript>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Модальное окно галереи -->
+          <div id="galleryModal" class="gallery-modal">
+            <div class="gallery-modal-content">
+              <!-- Кнопка закрытия -->
+              <button class="gallery-close" id="galleryCloseBtn">✕</button>
+              
+              <!-- Стрелки навигации -->
+              <button class="gallery-arrow gallery-arrow-left" id="galleryPrevBtn">❮</button>
+              <button class="gallery-arrow gallery-arrow-right" id="galleryNextBtn">❯</button>
+              
+              <!-- Основное изображение -->
+              <img id="galleryImage" class="gallery-image" alt="Полноразмерное фото">
+              
+              <!-- Счётчик изображений -->
+              <div class="gallery-counter">
+                <span id="currentImageNum">1</span> / <span id="totalImages">1</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Информация о товаре -->
+          <div class="product-info">
+            <!-- Категория и название -->
+            <div class="product-header">
+              <p class="section-subtitle">Каталог HandWood</p>
+              <h1>${product.name}</h1>
+              ${product.category_name ? `
+                <p class="product-category">
+                  Категория: ${product.category_name}
+                </p>
+              ` : ''}
+            </div>
+
+            <!-- Цена в блоке -->
+            <div class="price-block">
+              <p class="price-label">Стоимость товара:</p>
+              <h2 class="price-value">${product.price} ₽</h2>
+            </div>
+
+            <!-- Описание -->
+            ${product.description ? `
+              <div class="product-description">
+                <h3>Описание товара</h3>
+                <p class="description-text">${product.description}</p>
+              </div>
+            ` : ''}
+
+            <!-- СЕКЦИЯ: РАЗМЕР -->
+            ${product.size_open || product.size_closed || product.weight_net || product.weight_gross || product.diameter ? `
+              <div class="product-section">
+                <details>
+                  <summary style="cursor: pointer; font-weight: 600; font-size: 1.1rem; padding: 0.8rem 0; display: flex; align-items: center;">
+                    <span style="margin-right: 0.8rem;">📏</span> Размер
+                  </summary>
+                  <div style="padding: 1rem 0; border-left: 3px solid var(--color-accent-warm); padding-left: 1rem;">
+                    ${product.size_open ? `<p><strong>Размер в открытом виде:</strong> ${product.size_open}</p>` : ''}
+                    ${product.size_closed ? `<p><strong>Размер в закрытом виде:</strong> ${product.size_closed}</p>` : ''}
+                    ${product.weight_net ? `<p><strong>Чистый вес:</strong> ${product.weight_net}</p>` : ''}
+                    ${product.weight_gross ? `<p><strong>Вес брутто (с упаковкой):</strong> ${product.weight_gross}</p>` : ''}
+                    ${product.diameter ? `<p><strong>Диаметр деталей:</strong> ${product.diameter}</p>` : ''}
+                  </div>
+                </details>
+              </div>
+            ` : ''}
+
+            <!-- СЕКЦИЯ: ЧТО СОДЕРЖИТ НАБОР -->
+            ${product.contents ? `
+              <div class="product-section">
+                <details>
+                  <summary style="cursor: pointer; font-weight: 600; font-size: 1.1rem; padding: 0.8rem 0; display: flex; align-items: center;">
+                    <span style="margin-right: 0.8rem;">📦</span> Что содержит набор
+                  </summary>
+                  <div style="padding: 1rem 0; border-left: 3px solid var(--color-accent-warm); padding-left: 1rem;">
+                    <p style="white-space: pre-wrap; line-height: 1.6;">${product.contents}</p>
+                  </div>
+                </details>
+              </div>
+            ` : ''}
+
+            <!-- СЕКЦИЯ: ДОСТАВКА И ВОЗВРАТ -->
+            ${product.delivery_return ? `
+              <div class="product-section">
+                <details>
+                  <summary style="cursor: pointer; font-weight: 600; font-size: 1.1rem; padding: 0.8rem 0; display: flex; align-items: center;">
+                    <span style="margin-right: 0.8rem;">🚚</span> Доставка и возврат
+                  </summary>
+                  <div style="padding: 1rem 0; border-left: 3px solid var(--color-accent-warm); padding-left: 1rem;">
+                    <p style="white-space: pre-wrap; line-height: 1.6;">${product.delivery_return}</p>
+                  </div>
+                </details>
+              </div>
+            ` : ''}
+
+            <!-- СЕКЦИЯ: ИНСТРУКЦИИ ПО УХОДУ -->
+            ${product.care_instructions ? `
+              <div class="product-section">
+                <details open>
+                  <summary style="cursor: pointer; font-weight: 600; font-size: 1.1rem; padding: 0.8rem 0; display: flex; align-items: center;">
+                    <span style="margin-right: 0.8rem;">👕</span> Инструкции по уходу
+                  </summary>
+                  <div style="padding: 1rem 0; border-left: 3px solid var(--color-accent-warm); padding-left: 1rem;">
+                    <p style="white-space: pre-wrap; line-height: 1.6;">${product.care_instructions}</p>
+                  </div>
+                </details>
+              </div>
+            ` : ''}
+
+            <!-- Кнопка заказа -->
+            <a href="/order" class="btn-primary btn-order">
+              Заказать это изделие
+            </a>
+
+            <!-- Контакты -->
+            <div class="product-contacts">
+              <h3>Вопросы о товаре?</h3>
+              <p>Напишите нам напрямую в любом удобном мессенджере</p>
+              <div class="social-icons">
+                <a href="https://api.whatsapp.com/send/?phone=37360860100&text&type=phone_number&app_absent=0" target="_blank" title="WhatsApp"><img src="/icons/whatsapp.svg" alt="WhatsApp"></a>
+                <a href="viber://chat?number=%2B37360860100" target="_blank" title="Viber"><img src="/icons/viber.svg" alt="Viber"></a>
+                <a href="https://t.me/Hand_Wood_MD" target="_blank" title="Telegram"><img src="/icons/telegram.svg" alt="Telegram"></a>
+                <a href="https://www.instagram.com/handwoodmd?igsh=dXIwM2x3b2w3bGg3" target="_blank" title="Instagram"><img src="/icons/instagram.svg" alt="Instagram"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Рекомендуемые товары -->
+        <div style="margin-top: 5rem; padding-top: 5rem; border-top: 2px solid var(--color-neutral-bg); text-align: center;">
+          <h2 style="margin-bottom: 1rem;">Другие работы в каталоге</h2>
+          <a href="/gallery" class="btn-secondary">
+            Посмотреть все товары →
+          </a>
+        </div>
+      </div>
+    </section>
+  `;
+  var galleryImagesDataStr = JSON.stringify(galleryImagesData);
+%>
+
+<script>
+  // Глобальная галерея
+  window.galleryImagesData = <%- JSON.stringify(galleryImagesData) %>;
+  window.currentImageIndex = 0;
+
+  // Открыть галерею
+  window.openGallery = function(index) {
+    if (!window.galleryImagesData || window.galleryImagesData.length === 0) {
+      console.error('Нет изображений для открытия');
+      return;
+    }
+    
+    window.currentImageIndex = Math.max(0, Math.min(index, window.galleryImagesData.length - 1));
+    const modal = document.getElementById('galleryModal');
+    const img = document.getElementById('galleryImage');
+    
+    if (!modal || !img) {
+      console.error('Элементы модального окна не найдены');
+      return;
+    }
+    
+    img.src = window.galleryImagesData[window.currentImageIndex];
+    document.getElementById('currentImageNum').textContent = window.currentImageIndex + 1;
+    document.getElementById('totalImages').textContent = window.galleryImagesData.length;
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Закрыть галерею
+  window.closeGallery = function() {
+    const modal = document.getElementById('galleryModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  // Следующее изображение
+  window.nextImage = function() {
+    if (window.galleryImagesData.length === 0) return;
+    window.currentImageIndex = (window.currentImageIndex + 1) % window.galleryImagesData.length;
+    window.updateGalleryImage();
+  }
+
+  // Предыдущее изображение
+  window.prevImage = function() {
+    if (window.galleryImagesData.length === 0) return;
+    window.currentImageIndex = (window.currentImageIndex - 1 + window.galleryImagesData.length) % window.galleryImagesData.length;
+    window.updateGalleryImage();
+  }
+
+  // Обновить изображение в галерее
+  window.updateGalleryImage = function() {
+    const img = document.getElementById('galleryImage');
+    if (img) {
+      img.src = window.galleryImagesData[window.currentImageIndex];
+      document.getElementById('currentImageNum').textContent = window.currentImageIndex + 1;
+    }
+  }
+
+  // Инициализация событий
+  document.addEventListener('DOMContentLoaded', function() {
+    // Клик на главное фото
+    const mainImage = document.getElementById('main-image');
+    if (mainImage) {
+      mainImage.addEventListener('click', function() {
+        window.openGallery(0);
+      });
+    }
+
+    // Клики на миниатюры
+    const thumbnails = document.querySelectorAll('.thumbnail-container.gallery-trigger');
+    thumbnails.forEach(thumb => {
+      thumb.addEventListener('click', function(e) {
+        const index = parseInt(this.getAttribute('data-index')) || 0;
+        window.openGallery(index);
+      });
+    });
+
+    // Кнопки управления
+    const closeBtn = document.getElementById('galleryCloseBtn');
+    const prevBtn = document.getElementById('galleryPrevBtn');
+    const nextBtn = document.getElementById('galleryNextBtn');
+    
+    if (closeBtn) closeBtn.addEventListener('click', window.closeGallery);
+    if (prevBtn) prevBtn.addEventListener('click', window.prevImage);
+    if (nextBtn) nextBtn.addEventListener('click', window.nextImage);
+
+    // Закрытие по клику вне фото
+    const modal = document.getElementById('galleryModal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          window.closeGallery();
+        }
+      });
+    }
+  });
+
+  // Навигация клавиатурой
+  document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('galleryModal');
+    if (modal && modal.style.display === 'flex') {
+      if (e.key === 'ArrowRight') window.nextImage();
+      if (e.key === 'ArrowLeft') window.prevImage();
+      if (e.key === 'Escape') window.closeGallery();
+    }
+  });
+</script>
+
+<%- include('layouts/main', { title, description: product.description || product.name, content }) %>

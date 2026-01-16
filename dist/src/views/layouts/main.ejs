@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="<%- description || 'HandWood — эксклюзивные изделия из дерева, металла и 3D-печати. Ручная работа, ЧПУ, УФ-печать.' %>" />
+  <meta property="og:title" content="<%- title || 'HandWood — Искусство ручной работы' %>" />
+  <meta property="og:description" content="<%- description || 'Мастерская уникальных изделий из дерева, металла и композитов с применением современных технологий.' %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="<%- req.url %>" />
+  <meta property="og:image" content="/images/og-image.jpg" />
+  <title><%- title || 'HandWood — Искусство ручной работы' %></title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/styles/main.css" />
+</head>
+<body>
+  <%- include('../partials/header') %>
+  <main>
+    <%- content %>
+  </main>
+  <%- include('../partials/footer') %>
+  <script src="/scripts/lazy-load.js"></script>
+  <script src="/scripts/main.js"></script>
+</body>
+</html>

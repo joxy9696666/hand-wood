@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вход в админ панель — HandWood</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Lora', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #4A2C1F 0%, #2c1810 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .login-container {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 420px;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-logo h1 {
+      font-size: 2rem;
+      color: #4A2C1F;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-logo p {
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.7rem;
+      color: #4A2C1F;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.9rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s;
+      font-family: inherit;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #8B5E3C;
+      box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.1);
+    }
+
+    .form-group input::placeholder {
+      color: #ccc;
+    }
+
+    .error-message {
+      color: #c5192d;
+      background-color: #fce4ec;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      border-left: 4px solid #c5192d;
+      font-size: 0.9rem;
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.95rem;
+      background: linear-gradient(135deg, #8B5E3C 0%, #6B4423 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(139, 94, 60, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .back-link a {
+      color: #8B5E3C;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-link a:hover {
+      color: #6B4423;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 2rem;
+      }
+
+      .login-logo h1 {
+        font-size: 1.6rem;
+      }
+
+      .btn {
+        padding: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-logo">
+      <h1>🔐 HandWood</h1>
+      <p>Панель администратора</p>
+    </div>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="error-message">⚠️ <%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/admin/login">
+      <div class="form-group">
+        <label for="username">Имя пользователя</label>
+        <input 
+          type="text" 
+          id="username" 
+          name="username" 
+          placeholder="Введите имя пользователя"
+          required
+          autocomplete="username"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Пароль</label>
+        <input 
+          type="password" 
+          id="password" 
+          name="password" 
+          placeholder="Введите пароль"
+          required
+          autocomplete="current-password"
+        />
+      </div>
+
+      <button type="submit" class="btn">Вход</button>
+    </form>
+
+    <div class="back-link">
+      <a href="/">← На главную</a>
+    </div>
+  </div>
+</body>
+</html>

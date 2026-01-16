@@ -1,0 +1,98 @@
+<%
+  var content = `
+    <section class="section gallery-section">
+      <div class="container">
+        <div class="section-title">
+          <h1>Каталог изделий</h1>
+          <p class="subtitle">Галерея наших лучших работ и проектов</p>
+          <p class="section-description" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto;">
+            Каждое изделие создано с любовью к мастерству и вниманием к деталям. Выберите категорию для просмотра более подробно.
+          </p>
+        </div>
+
+        <!-- Навигация по категориям -->
+        <div class="gallery-categories" role="group" aria-label="Категории товаров">
+          <button class="category-btn active" data-category="all" style="font-weight: 600; padding: 0.9rem 2rem; cursor: pointer;">
+            <span>📋 Все изделия</span>
+          </button>` +
+          categories.map(category => `
+          <a href="/category/${category.id}" class="category-btn category-link" style="text-decoration: none; padding: 0.9rem 2rem; font-weight: 500; display: inline-flex; align-items: center;">
+            <span>${category.icon || '✨'} ${category.name}</span>
+          </a>`).join('') + `
+        </div>
+
+        <!-- Сетка товаров -->
+        <div class="gallery-grid" role="region" aria-label="Галерея товаров">` +
+          products.map(product => `
+            <a href="/product/${product.id}" class="gallery-item-link" title="${product.name}">
+              <div class="gallery-item" data-category="${product.category_id || ''}" role="article">
+                <div class="gallery-item-image">
+                  <picture>
+                    ${product.image_path ?
+                      `<source 
+                         data-srcset="${product.image_path}?w=800&q=80&fm=webp" 
+                         type="image/webp">
+                       <img 
+                         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='400 300'%3E%3C/svg%3E"
+                         data-src="${product.image_path}?w=800&q=80" 
+                         alt="${product.name}" 
+                         class="lazy-img"
+                         loading="lazy"
+                         width="400"
+                         height="300">` :
+                      `<source 
+                         data-srcset="https://via.placeholder.com/400x300.webp" 
+                         type="image/webp">
+                       <img 
+                         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='400 300'%3E%3C/svg%3E"
+                         data-src="https://via.placeholder.com/400x300?text=${encodeURIComponent(product.name)}" 
+                         alt="${product.name}" 
+                         class="lazy-img"
+                         loading="lazy"
+                         width="400"
+                         height="300">`
+                    }
+                  </picture>
+                  <div class="gallery-item-overlay">
+                    <span class="gallery-item-action">Подробнее →</span>
+                  </div>
+                </div>
+                <div class="gallery-item-content">
+                  <h3 class="gallery-item-title">${product.name}</h3>
+                  ${product.description ? `<p class="gallery-item-description">${product.description}</p>` : ''}
+                  <div class="gallery-item-meta">
+                    ${product.price ? `<p class="gallery-item-price" style="color: var(--color-accent-warm); font-weight: 600; margin-bottom: 0.4rem;">${product.price} ₽</p>` : ''}
+                    ${product.category_name ? `<p class="gallery-item-category" style="font-size: 0.85rem; color: var(--color-text-secondary);">${product.category_name}</p>` : ''}
+                  </div>
+                </div>
+              </div>
+            </a>
+          `).join('') + `
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // Фильтрация товаров по категориям (для быстрого поиска на главной странице)
+      const filterBtn = document.querySelector('.category-btn[data-category="all"]');
+      if (filterBtn) {
+        filterBtn.addEventListener('click', function() {
+          document.querySelectorAll('.gallery-item').forEach(item => {
+            item.parentElement.style.display = 'block';
+            item.parentElement.style.animation = 'fadeInUp 0.5s ease-out';
+          });
+        });
+      }
+
+      // Lazy loading инициализация
+      if (window.lazyLoadUtils && window.lazyLoadUtils.updateLazyLoading) {
+        document.addEventListener('DOMContentLoaded', function() {
+          setTimeout(() => {
+            window.lazyLoadUtils.updateLazyLoading();
+          }, 100);
+        });
+      }
+    </script>
+  `;
+%>
+<%- include('layouts/main', { title: 'Каталог изделий — HandWood', description: 'Галерея работ: изделия из дерева, металла и 3D-печати.', content }) %>

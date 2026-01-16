@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление товарами — HandWood</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/admin.css">
+    <style>
+      /* СПЕЦИФИЧНЫЕ СТИЛИ ДЛЯ СТРАНИЦЫ ТОВАРОВ */
+
+      /* ФИЛЬТР ПО КАТЕГОРИЯМ */
+      .category-filter {
+        display: flex;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filter-label {
+        font-weight: 600;
+        color: #4A2C1F;
+        margin-right: 0.5rem;
+      }
+
+      .filter-btn {
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        color: #666;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .filter-btn:hover {
+        border-color: #8B5E3C;
+        color: #8B5E3C;
+      }
+
+      .filter-btn.active {
+        background: #8B5E3C;
+        color: white;
+        border-color: #8B5E3C;
+      }
+
+      .products-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .product-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s;
+        background: #fafaf8;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .product-card:hover {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        border-color: #8B5E3C;
+        background: white;
+        transform: translateY(-2px);
+      }
+
+      .product-image {
+        width: 100%;
+        height: 100px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #e8e3db;
+        margin-bottom: 1rem;
+      }
+
+      .product-image.placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 3rem;
+      }
+
+      .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        flex: 1;
+      }
+
+      .product-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4A2C1F;
+        line-height: 1.3;
+      }
+
+      .product-desc {
+        color: #666;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .product-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.8rem;
+        font-size: 0.85rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid #f0f0f0;
+      }
+
+      .product-price {
+        font-weight: 700;
+        color: #8B5E3C;
+        font-size: 1.1rem;
+      }
+
+      .product-category {
+        color: #666;
+        display: inline-block;
+        padding: 0.3rem 0.6rem;
+        background: #f0e8df;
+        border-radius: 4px;
+        width: fit-content;
+      }
+
+      .product-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: auto;
+        padding-top: 1rem;
+      }
+
+      .btn-action {
+        padding: 0.6rem 0.8rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-align: center;
+        font-size: 0.75rem;
+        text-decoration: none;
+        display: inline-block;
+        flex: 1;
+        white-space: nowrap;
+      }
+
+      .btn-edit {
+        background: #2196F3;
+        color: white;
+      }
+
+      .btn-edit:hover {
+        background: #0b7dda;
+      }
+
+      .btn-delete {
+        background: #f44336;
+        color: white;
+      }
+
+      .btn-delete:hover {
+        background: #da190b;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #999;
+      }
+
+      .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      /* КОЛЛАПС ФОРМЫ ДОБАВЛЕНИЯ ТОВАРА */
+      .form-section {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .form-section.collapsed {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+
+      .form-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.2rem 1.5rem;
+        background: #f5f5f5;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+      }
+
+      .form-section.collapsed .form-section-header {
+        border-bottom: none;
+      }
+
+      .form-section-header:hover {
+        background: #efefef;
+      }
+
+      .form-section-header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-weight: 600;
+        color: #4A2C1F;
+        font-size: 1.1rem;
+      }
+
+      .form-toggle-btn {
+        font-size: 1.5rem;
+        transition: transform 0.3s ease;
+      }
+
+      .form-section.collapsed .form-toggle-btn {
+        transform: rotate(-90deg);
+      }
+
+      .form-section-content {
+        padding: 1.5rem;
+        display: none;
+        animation: slideDown 0.3s ease;
+      }
+
+      .form-section-content.visible {
+        display: block;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .templates-section {
+        background: #f9f7f5;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e8ddd4;
+      }
+
+      .templates-title {
+        font-weight: 600;
+        color: #4A2C1F;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .templates-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.8rem;
+      }
+
+      .template-btn {
+        padding: 0.8rem 1rem;
+        background: white;
+        border: 2px solid #8B5E3C;
+        color: #8B5E3C;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        text-align: center;
+      }
+
+      .template-btn:hover {
+        background: #8B5E3C;
+        color: white;
+      }
+
+      .templates-controls {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .templates-edit-btn {
+        padding: 0.6rem 1rem;
+        background: #FFA500;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+      }
+
+      .templates-edit-btn:hover {
+        background: #FF8C00;
+      }
+
+      /* МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ШАБЛОНОВ */
+      #templatesModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      #templatesModal.show {
+        display: flex;
+      }
+
+      .templates-modal-content {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        width: 100%;
+      }
+
+      .templates-modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #4A2C1F;
+        margin-bottom: 1.5rem;
+      }
+
+      .template-edit-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .template-edit-section:last-child {
+        border-bottom: none;
+      }
+
+      .template-edit-title {
+        font-weight: 600;
+        color: #4A2C1F;
+        margin-bottom: 0.8rem;
+        font-size: 1rem;
+      }
+
+      .template-edit-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .template-edit-form .form-group {
+        margin-bottom: 0;
+      }
+
+      .template-edit-form .form-group[style*="grid-column"] {
+        grid-column: 1 / -1;
+      }
+
+      .templates-modal-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        justify-content: flex-end;
+      }
+
+      /* КНОПКА КОПИРОВАНИЯ ТОВАРА */
+      .btn-copy {
+        background: #FF9800;
+        color: white;
+      }
+
+      .btn-copy:hover {
+        background: #F57C00;
+      }
+
+      /* МОДАЛЬНОЕ ОКНО */
+      #editModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      #editModal.show {
+        display: flex;
+      }
+
+      .existing-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.8rem;
+        margin-top: 1rem;
+      }
+
+      .image-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .image-item img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+      }
+
+      .image-delete-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 28px;
+        height: 28px;
+        background: rgba(244, 67, 54, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+
+      .image-delete-btn:hover {
+        background: #f44336;
+      }
+
+      /* МОБИЛЬНАЯ ВЕРСИЯ */
+      @media (max-width: 768px) {
+        .admin-sidebar {
+          width: 100%;
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          z-index: 1100;
+          transform: translateX(-100%);
+        }
+
+        .admin-sidebar.visible {
+          transform: translateX(0);
+        }
+
+        .admin-sidebar.hidden {
+          transform: translateX(-100%);
+        }
+
+        .admin-main {
+          margin-left: 0;
+          padding: 1rem;
+        }
+
+        .menu-toggle {
+          display: block;
+        }
+
+        .products-list {
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+
+        .product-actions {
+          flex-direction: column;
+        }
+
+        .topbar-title {
+          font-size: 1.4rem;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .modal-content {
+          padding: 1.5rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .admin-sidebar {
+          width: 90vw;
+          max-width: 250px;
+          transform: translateX(-100%);
+        }
+
+        .admin-sidebar.visible {
+          transform: translateX(0);
+        }
+
+        .admin-main {
+          padding: 0.75rem;
+        }
+
+        .topbar-title {
+          font-size: 1.2rem;
+        }
+
+        .products-list {
+          grid-template-columns: 1fr;
+        }
+
+        .product-card {
+          padding: 1rem;
+        }
+
+        .content-section {
+          padding: 1.5rem;
+        }
+
+        .modal-actions {
+          grid-template-columns: 1fr;
+        }
+
+        .category-filter {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-logo">
+          <h2>🔐 HandWood</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+          <li><a href="/admin">📊 Панель управления</a></li>
+          <li><a href="/admin/products" class="active">📦 Товары</a></li>
+          <li><a href="/admin/categories">📂 Категории</a></li>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a href="/admin/change-password" class="pwd-btn">🔑 Смена пароля</a>
+          <a href="/admin/logout" class="logout-btn">🚪 Выход</a>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        <div class="admin-topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleMenu()">☰</button>
+            <h1 class="topbar-title">Товары</h1>
+          </div>
+        </div>
+
+        <!-- ДОБАВИТЬ ТОВАР -->
+        <div class="form-section collapsed">
+          <div class="form-section-header" onclick="toggleFormSection(this)">
+            <div class="form-section-header-title">
+              <span class="form-toggle-btn">▼</span>
+              <span>➕ Добавить новый товар</span>
+            </div>
+          </div>
+          <div class="form-section-content">
+            <!-- ШАБЛОНЫ ЗАПОЛНЕНИЯ -->
+            <div class="templates-section">
+              <div class="templates-title">📋 Шаблоны для быстрого заполнения</div>
+              <div class="templates-list">
+                <button type="button" class="template-btn" onclick="applyTemplate('default')">Пустой шаблон</button>
+                <button type="button" class="template-btn" onclick="applyTemplate('furniture')">🪑 Мебель</button>
+                <button type="button" class="template-btn" onclick="applyTemplate('decor')">🖼️ Декор</button>
+                <button type="button" class="template-btn" onclick="applyTemplate('kit')">📦 Набор</button>
+              </div>
+              <div class="templates-controls">
+                <button type="button" class="templates-edit-btn" onclick="openTemplatesModal()">⚙️ Редактировать шаблоны</button>
+              </div>
+            </div>
+
+            <form action="/admin/products" method="POST" enctype="multipart/form-data" class="form-grid">
+              <div class="form-group">
+                <label for="name">Название товара *</label>
+                <input type="text" id="name" name="name" required placeholder="Введите название">
+              </div>
+
+              <div class="form-group">
+                <label for="price">Стоимость *</label>
+                <input type="number" id="price" name="price" step="0.01" required placeholder="0.00" min="0">
+              </div>
+
+              <div class="form-group">
+                <label for="category_id">Категория</label>
+                <select id="category_id" name="category_id">
+                  <option value="">Выберите категорию</option>
+                  <% categories.forEach(category => { %>
+                    <option value="<%= category.id %>"><%= category.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="description">Описание товара</label>
+                <textarea id="description" name="description" rows="3" placeholder="Введите описание товара"></textarea>
+              </div>
+
+              <!-- СЕКЦИЯ: РАЗМЕР -->
+              <div class="form-group">
+                <label for="size_open">Размер в открытом виде</label>
+                <input type="text" id="size_open" name="size_open" placeholder="Например: 25×30 см">
+              </div>
+
+              <div class="form-group">
+                <label for="size_closed">Размер в закрытом виде</label>
+                <input type="text" id="size_closed" name="size_closed" placeholder="Например: 15×20 см">
+              </div>
+
+              <div class="form-group">
+                <label for="weight_net">Чистый вес</label>
+                <input type="text" id="weight_net" name="weight_net" placeholder="Например: 200 г">
+              </div>
+
+              <div class="form-group">
+                <label for="weight_gross">Вес брутто (с упаковкой)</label>
+                <input type="text" id="weight_gross" name="weight_gross" placeholder="Например: 250 г">
+              </div>
+
+              <div class="form-group">
+                <label for="diameter">Диаметр деталей</label>
+                <input type="text" id="diameter" name="diameter" placeholder="Например: 5 мм">
+              </div>
+
+              <!-- СЕКЦИЯ: ЧТО СОДЕРЖИТ НАБОР -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="contents">Что содержит набор</label>
+                <textarea id="contents" name="contents" rows="3" placeholder="Перечислите содержимое набора"></textarea>
+              </div>
+
+              <!-- СЕКЦИЯ: ДОСТАВКА И ВОЗВРАТ (пока для редактирования позже) -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="delivery_return">Доставка и возврат (шаблон будет позже)</label>
+                <textarea id="delivery_return" name="delivery_return" rows="3" placeholder="Информация о доставке и возврате"></textarea>
+              </div>
+
+              <!-- СЕКЦИЯ: ИНСТРУКЦИИ ПО УХОДУ -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="care_instructions">Инструкции по уходу</label>
+                <textarea id="care_instructions" name="care_instructions" rows="3" placeholder="Рекомендации по уходу за товаром"></textarea>
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="images">Изображения товара</label>
+                <input type="file" id="images" name="images" accept="image/*" multiple>
+                <p class="form-hint">Вы можете выбрать несколько фотографий одновременно</p>
+              </div>
+
+              <button type="submit" class="btn-submit">Добавить товар</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- СПИСОК ТОВАРОВ -->
+        <div class="content-section">
+          <h2 class="section-title">📦 Существующие товары (<%= products.length %>)</h2>
+          
+          <% if (categories.length > 0) { %>
+            <div class="category-filter">
+              <span class="filter-label">Фильтр по категориям:</span>
+              <button class="filter-btn active" data-category="all" onclick="filterByCategory('all', this)">
+                Все товары
+              </button>
+              <% categories.forEach(category => { %>
+                <button class="filter-btn" data-category="<%= category.id %>" onclick="filterByCategory('<%= category.id %>', this)">
+                  <%= category.name %>
+                </button>
+              <% }); %>
+            </div>
+          <% } %>
+          
+          <% if (products.length === 0) { %>
+            <div class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <p>Товаров пока нет. Добавьте первый товар выше.</p>
+            </div>
+          <% } else { %>
+            <div class="products-list">
+              <% products.forEach(product => { %>
+                <div class="product-card" data-product-id="<%= product.id %>" data-category-id="<%= product.category_id || '' %>">
+                  <% if (product.image_path) { %>
+                    <img src="<%= product.image_path %>" alt="<%= product.name %>" class="product-image">
+                  <% } else { %>
+                    <div class="product-image placeholder">📷</div>
+                  <% } %>
+                  
+                  <div class="product-info">
+                    <div class="product-name"><%= product.name %></div>
+                    <% if (product.description) { %>
+                      <div class="product-desc"><%= product.description %></div>
+                    <% } %>
+                    <div class="product-meta">
+                      <span class="product-price">💰 <%= product.price %> ₽</span>
+                      <% if (product.category_name) { %>
+                        <span class="product-category">📂 <%= product.category_name %></span>
+                      <% } %>
+                    </div>
+                  </div>
+
+                  <div class="product-actions">
+                    <button type="button" class="btn-action btn-edit" onclick="editProduct(<%= product.id %>)">✏️ Редактировать</button>
+                    <button type="button" class="btn-action btn-copy" onclick="copyProductAsTemplate(<%= product.id %>)">📋 Копировать</button>
+                    <form action="/admin/products/<%= product.id %>/delete" method="POST" style="margin: 0; flex: 1;" onsubmit="return confirm('Удалить товар?')">
+                      <button type="submit" class="btn-action btn-delete" style="width: 100%;">🗑️ Удалить</button>
+                    </form>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;">
+          <a href="/admin" style="color: #8B5E3C; text-decoration: none; font-weight: 600;">← Вернуться в панель управления</a>
+        </div>
+      </main>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ШАБЛОНОВ -->
+    <div id="templatesModal">
+      <div class="templates-modal-content">
+        <h2 class="templates-modal-title">⚙️ Редактировать шаблоны заполнения</h2>
+        
+        <div id="templatesEditContainer"></div>
+
+        <div class="templates-modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeTemplatesModal()">Отмена</button>
+          <button type="button" class="btn-submit" onclick="saveTemplates()">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
+    <div id="editModal">
+      <div class="modal-content">
+        <h2 class="modal-title">✏️ Редактировать товар</h2>
+        
+        <!-- ШАБЛОНЫ ЗАПОЛНЕНИЯ ДЛЯ РЕДАКТИРОВАНИЯ -->
+        <div class="templates-section" style="margin-bottom: 1.5rem;">
+          <div class="templates-title">📋 Применить шаблон к описанию и тексту</div>
+          <div class="templates-list">
+            <button type="button" class="template-btn" onclick="applyEditTemplate('furniture')">🪑 Мебель</button>
+            <button type="button" class="template-btn" onclick="applyEditTemplate('decor')">🖼️ Декор</button>
+            <button type="button" class="template-btn" onclick="applyEditTemplate('kit')">📦 Набор</button>
+          </div>
+        </div>
+
+        <form id="editForm" action="" method="POST" enctype="multipart/form-data" class="modal-form-grid">
+          <!-- Скрытое поле для сохранения текущего превью -->
+          <input type="hidden" name="existing_image" id="existingImage" value="">
+          
+          <div class="form-group">
+            <label>Название</label>
+            <input type="text" name="name" id="editName" required>
+          </div>
+
+          <div class="form-group">
+            <label>Стоимость</label>
+            <input type="number" name="price" id="editPrice" step="0.01" required>
+          </div>
+
+          <div class="form-group">
+            <label>Категория</label>
+            <select name="category_id" id="editCategory">
+              <option value="">Без категории</option>
+              <% categories.forEach(category => { %>
+                <option value="<%= category.id %>"><%= category.name %></option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Описание</label>
+            <textarea name="description" id="editDescription" rows="3"></textarea>
+          </div>
+
+          <!-- СЕКЦИЯ: РАЗМЕР -->
+          <div class="form-group">
+            <label>Размер в открытом виде</label>
+            <input type="text" name="size_open" id="editSizeOpen" placeholder="Например: 25×30 см">
+          </div>
+
+          <div class="form-group">
+            <label>Размер в закрытом виде</label>
+            <input type="text" name="size_closed" id="editSizeClosed" placeholder="Например: 15×20 см">
+          </div>
+
+          <div class="form-group">
+            <label>Чистый вес</label>
+            <input type="text" name="weight_net" id="editWeightNet" placeholder="Например: 200 г">
+          </div>
+
+          <div class="form-group">
+            <label>Вес брутто (с упаковкой)</label>
+            <input type="text" name="weight_gross" id="editWeightGross" placeholder="Например: 250 г">
+          </div>
+
+          <div class="form-group">
+            <label>Диаметр деталей</label>
+            <input type="text" name="diameter" id="editDiameter" placeholder="Например: 5 мм">
+          </div>
+
+          <!-- СЕКЦИЯ: ЧТО СОДЕРЖИТ НАБОР -->
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Что содержит набор</label>
+            <textarea name="contents" id="editContents" rows="3" placeholder="Перечислите содержимое набора"></textarea>
+          </div>
+
+          <!-- СЕКЦИЯ: ДОСТАВКА И ВОЗВРАТ -->
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Доставка и возврат</label>
+            <textarea name="delivery_return" id="editDeliveryReturn" rows="3" placeholder="Информация о доставке и возврате"></textarea>
+          </div>
+
+          <!-- СЕКЦИЯ: ИНСТРУКЦИИ ПО УХОДУ -->
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Инструкции по уходу</label>
+            <textarea name="care_instructions" id="editCareInstructions" rows="3" placeholder="Рекомендации по уходу за товаром"></textarea>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Добавить новые изображения</label>
+            <input type="file" name="images" accept="image/*" multiple>
+            <p class="form-hint">Оставьте пусто, если не хотите менять изображения</p>
+          </div>
+
+          <div id="existingImagesContainer"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+            <button type="submit" class="btn-submit" style="grid-column: auto; width: auto;">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ШАБЛОНОВ
+      let customTemplates = {
+        default: {
+          name: '',
+          description: '',
+          size_open: '',
+          size_closed: '',
+          weight_net: '',
+          weight_gross: '',
+          diameter: '',
+          contents: '',
+          delivery_return: '',
+          care_instructions: ''
+        },
+        furniture: {
+          name: '',
+          description: 'Качественная мебель ручной работы из натурального дерева',
+          size_open: '',
+          size_closed: '',
+          weight_net: '',
+          weight_gross: '',
+          diameter: '',
+          contents: '',
+          delivery_return: 'Доставка по России. Возврат в течение 14 дней.',
+          care_instructions: 'Протирать мягкой сухой тканью. Избегать прямых солнечных лучей.'
+        },
+        decor: {
+          name: '',
+          description: 'Уникальный предмет декора, созданный вручную',
+          size_open: '',
+          size_closed: '',
+          weight_net: '',
+          weight_gross: '',
+          diameter: '',
+          contents: '',
+          delivery_return: 'Доставка по России. Возврат в течение 14 дней.',
+          care_instructions: 'Осторожное обращение. Хранить в защищённом от влаги месте.'
+        },
+        kit: {
+          name: '',
+          description: 'Готовый набор для творчества, все материалы включены',
+          size_open: '',
+          size_closed: '',
+          weight_net: '',
+          weight_gross: '',
+          diameter: '',
+          contents: 'В набор входит: ',
+          delivery_return: 'Доставка по России. Возврат в течение 14 дней.',
+          care_instructions: 'Изделие не требует специального ухода.'
+        }
+      };
+
+      // НАЗВАНИЯ ШАБЛОНОВ (сохраняются отдельно)
+      let templateNames = {
+        furniture: '🪑 Мебель',
+        decor: '🖼️ Декор',
+        kit: '📦 Набор'
+      };
+
+      // Загружаем сохранённые шаблоны из localStorage
+      function loadTemplatesFromStorage() {
+        const saved = localStorage.getItem('productTemplates');
+        const savedNames = localStorage.getItem('templateNames');
+        if (saved) {
+          try {
+            customTemplates = JSON.parse(saved);
+          } catch (e) {
+            console.log('Ошибка загрузки шаблонов, используются стандартные');
+          }
+        }
+        if (savedNames) {
+          try {
+            templateNames = JSON.parse(savedNames);
+          } catch (e) {
+            console.log('Ошибка загрузки названий шаблонов');
+          }
+        }
+      }
+
+      // Сохраняем шаблоны в localStorage
+      function saveTemplatesToStorage() {
+        localStorage.setItem('productTemplates', JSON.stringify(customTemplates));
+        localStorage.setItem('templateNames', JSON.stringify(templateNames));
+      }
+
+      // Загружаем шаблоны при загрузке страницы
+      loadTemplatesFromStorage();
+      updateTemplateButtons();
+
+      // ОТКРЫТЬ МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ШАБЛОНОВ
+      function openTemplatesModal() {
+        const container = document.getElementById('templatesEditContainer');
+        container.innerHTML = '';
+
+        // РЕДАКТИРОВАНИЕ СУЩЕСТВУЮЩИХ ШАБЛОНОВ
+        const existingTemplatesDiv = document.createElement('div');
+        existingTemplatesDiv.innerHTML = '<h3 style="color: #4A2C1F; margin-bottom: 1rem; margin-top: 0;">Встроенные шаблоны</h3>';
+        container.appendChild(existingTemplatesDiv);
+
+        for (const [key, template] of Object.entries(customTemplates)) {
+          if (key === 'default') continue;
+          
+          const section = document.createElement('div');
+          section.className = 'template-edit-section';
+          
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.id = `templateName_${key}`;
+          nameInput.value = templateNames[key] || key;
+          nameInput.style.cssText = 'width: 100%; padding: 0.6rem; margin-bottom: 1rem; border: 2px solid #e0e0e0; border-radius: 6px; font-weight: 600; font-size: 1rem;';
+          
+          section.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div style="flex: 1;"></div>
+              <button type="button" class="btn-delete" onclick="deleteTemplate('${key}')" style="padding: 0.5rem 1rem; font-size: 0.8rem;">🗑️ Удалить шаблон</button>
+            </div>
+            <div class="template-edit-form">
+              <div class="form-group">
+                <label>Описание</label>
+                <textarea data-template="${key}" data-field="description" rows="2" class="template-field">${template.description}</textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Что содержит набор</label>
+                <textarea data-template="${key}" data-field="contents" rows="2" class="template-field">${template.contents}</textarea>
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Доставка и возврат</label>
+                <textarea data-template="${key}" data-field="delivery_return" rows="2" class="template-field">${template.delivery_return}</textarea>
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Инструкции по уходу</label>
+                <textarea data-template="${key}" data-field="care_instructions" rows="2" class="template-field">${template.care_instructions}</textarea>
+              </div>
+            </div>
+          `;
+          
+          // Вставляем поле ввода названия в начало
+          const nameWrapper = document.createElement('div');
+          nameWrapper.className = 'template-edit-title';
+          nameWrapper.textContent = 'Название шаблона:';
+          section.insertBefore(nameInput, section.firstChild);
+          section.insertBefore(nameWrapper, section.firstChild);
+          
+          container.appendChild(section);
+        }
+
+        // ДОБАВЛЕНИЕ НОВОГО ШАБЛОНА
+        const newTemplateDiv = document.createElement('div');
+        newTemplateDiv.style.cssText = 'margin-top: 2rem; padding: 1.5rem; background: #f0f8ff; border: 2px dashed #8B5E3C; border-radius: 8px;';
+        newTemplateDiv.innerHTML = `
+          <h3 style="color: #4A2C1F; margin-top: 0; margin-bottom: 1rem;">➕ Добавить новый шаблон</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <input type="text" id="newTemplateName" placeholder="Название (например: Ткани, Украшения)" style="padding: 0.8rem; border: 2px solid #e0e0e0; border-radius: 6px;">
+            <button type="button" onclick="addNewTemplate()" class="btn-submit" style="padding: 0.8rem;">Создать шаблон</button>
+          </div>
+        `;
+        container.appendChild(newTemplateDiv);
+
+        document.getElementById('templatesModal').classList.add('show');
+      }
+
+      // ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ШАБЛОНОВ
+      function closeTemplatesModal() {
+        document.getElementById('templatesModal').classList.remove('show');
+      }
+
+      // СОХРАНИТЬ ИЗМЕНЁННЫЕ ШАБЛОНЫ
+      function saveTemplates() {
+        // Сохраняем данные шаблонов
+        document.querySelectorAll('.template-field').forEach(field => {
+          const template = field.getAttribute('data-template');
+          const fieldName = field.getAttribute('data-field');
+          customTemplates[template][fieldName] = field.value;
+        });
+
+        // Сохраняем названия шаблонов
+        document.querySelectorAll('input[id^="templateName_"]').forEach(input => {
+          const key = input.id.replace('templateName_', '');
+          const newName = input.value.trim();
+          if (newName) {
+            templateNames[key] = newName;
+          }
+        });
+
+        saveTemplatesToStorage();
+        closeTemplatesModal();
+        updateTemplateButtons();
+        
+        // Показываем уведомление
+        alert('✓ Все изменения шаблонов успешно сохранены');
+      }
+
+      // ДОБАВИТЬ НОВЫЙ ШАБЛОН
+      function addNewTemplate() {
+        const nameInput = document.getElementById('newTemplateName');
+        const name = nameInput.value.trim();
+        
+        if (!name) {
+          alert('Пожалуйста, введите название шаблона');
+          return;
+        }
+        
+        // Генерируем уникальный ID
+        const id = 'template_' + Date.now();
+        
+        // Создаём новый шаблон
+        customTemplates[id] = {
+          name: '',
+          description: '',
+          size_open: '',
+          size_closed: '',
+          weight_net: '',
+          weight_gross: '',
+          diameter: '',
+          contents: '',
+          delivery_return: '',
+          care_instructions: ''
+        };
+        
+        templateNames[id] = name;
+        
+        saveTemplatesToStorage();
+        nameInput.value = '';
+        openTemplatesModal();
+        
+        alert(`✓ Новый шаблон "${name}" создан`);
+      }
+
+      // УДАЛИТЬ ШАБЛОН
+      function deleteTemplate(key) {
+        if (confirm(`Вы уверены, что хотите удалить шаблон "${templateNames[key]}"?`)) {
+          delete customTemplates[key];
+          delete templateNames[key];
+          
+          saveTemplatesToStorage();
+          openTemplatesModal();
+          updateTemplateButtons();
+          
+          alert('✓ Шаблон успешно удалён');
+        }
+      }
+
+      // ОБНОВИТЬ КНОПКИ ШАБЛОНОВ НА СТРАНИЦЕ
+      function updateTemplateButtons() {
+        // Обновляем кнопки в форме добавления товара
+        const addFormTemplates = document.querySelector('.form-section .templates-list');
+        if (addFormTemplates) {
+          addFormTemplates.innerHTML = '';
+          for (const [key, name] of Object.entries(templateNames)) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'template-btn';
+            btn.onclick = () => applyTemplate(key);
+            btn.textContent = name;
+            addFormTemplates.appendChild(btn);
+          }
+        }
+        
+        // Обновляем кнопки в форме редактирования товара
+        const editFormTemplates = document.querySelector('#editModal .templates-list');
+        if (editFormTemplates) {
+          editFormTemplates.innerHTML = '';
+          for (const [key, name] of Object.entries(templateNames)) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'template-btn';
+            btn.onclick = () => applyEditTemplate(key);
+            btn.textContent = name;
+            editFormTemplates.appendChild(btn);
+          }
+        }
+      }
+
+      // ПРИМЕНИТЬ ШАБЛОН К ФОРМЕ
+      function applyTemplate(templateName) {
+        const template = customTemplates[templateName] || customTemplates.default;
+        
+        document.getElementById('name').value = template.name;
+        document.getElementById('description').value = template.description;
+        document.getElementById('size_open').value = template.size_open;
+        document.getElementById('size_closed').value = template.size_closed;
+        document.getElementById('weight_net').value = template.weight_net;
+        document.getElementById('weight_gross').value = template.weight_gross;
+        document.getElementById('diameter').value = template.diameter;
+        document.getElementById('contents').value = template.contents;
+        document.getElementById('delivery_return').value = template.delivery_return;
+        document.getElementById('care_instructions').value = template.care_instructions;
+
+        // Прокручиваем форму в видимую область
+        const form = document.querySelector('.form-section');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // ПРИМЕНИТЬ ШАБЛОН К ФОРМЕ РЕДАКТИРОВАНИЯ
+      function applyEditTemplate(templateName) {
+        const template = customTemplates[templateName] || customTemplates.default;
+        
+        // "Умная" логика: применяем поля только если они заполнены в шаблоне
+        // Если поле в шаблоне пустое - не трогаем текущее значение в товаре
+        if (template.description && template.description.trim()) {
+          document.getElementById('editDescription').value = template.description;
+        }
+        if (template.contents && template.contents.trim()) {
+          document.getElementById('editContents').value = template.contents;
+        }
+        if (template.delivery_return && template.delivery_return.trim()) {
+          document.getElementById('editDeliveryReturn').value = template.delivery_return;
+        }
+        if (template.care_instructions && template.care_instructions.trim()) {
+          document.getElementById('editCareInstructions').value = template.care_instructions;
+        }
+        
+        // Показываем уведомление о том, какой шаблон был применён
+        const templateName_display = templateNames[templateName] || 'Шаблон';
+        alert(`✓ Шаблон "${templateName_display}" применён\n\nЗаполнены только непустые поля из шаблона, остальные данные товара сохранены`);
+      }
+
+      // КОПИРОВАТЬ ДАННЫЕ ИЗ ТОВАРА В ФОРМУ ДОБАВЛЕНИЯ
+      function copyProductAsTemplate(productId) {
+        fetch('/admin/products/' + productId)
+          .then(response => response.json())
+          .then(product => {
+            // Заполняем форму добавления данными из товара
+            document.getElementById('name').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('category_id').value = product.category_id || '';
+            document.getElementById('description').value = product.description || '';
+            document.getElementById('size_open').value = product.size_open || '';
+            document.getElementById('size_closed').value = product.size_closed || '';
+            document.getElementById('weight_net').value = product.weight_net || '';
+            document.getElementById('weight_gross').value = product.weight_gross || '';
+            document.getElementById('diameter').value = product.diameter || '';
+            document.getElementById('contents').value = product.contents || '';
+            document.getElementById('delivery_return').value = product.delivery_return || '';
+            document.getElementById('care_instructions').value = product.care_instructions || '';
+
+            // Разворачиваем форму
+            const formSection = document.querySelector('.form-section');
+            if (formSection.classList.contains('collapsed')) {
+              formSection.classList.remove('collapsed');
+              const content = formSection.querySelector('.form-section-content');
+              content.classList.add('visible');
+            }
+
+            // Прокручиваем форму в видимую область
+            formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Показываем уведомление
+            alert(`✓ Данные товара "${product.name}" скопированы в форму.\nЗаполните недостающие поля и добавьте название и стоимость.`);
+          })
+          .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при загрузке данных товара');
+          });
+      }
+
+      // УПРАВЛЕНИЕ КОЛЛАПСОМ ФОРМЫ ДОБАВЛЕНИЯ
+      function toggleFormSection(header) {
+        const section = header.parentElement;
+        const content = section.querySelector('.form-section-content');
+        
+        section.classList.toggle('collapsed');
+        
+        if (section.classList.contains('collapsed')) {
+          content.classList.remove('visible');
+        } else {
+          content.classList.add('visible');
+        }
+      }
+
+      function toggleMenu() {
+        const sidebar = document.getElementById('adminSidebar');
+        sidebar.classList.toggle('visible');
+        sidebar.classList.toggle('hidden');
+      }
+
+      // Фильтрация товаров по категориям
+      function filterByCategory(categoryId, button) {
+        // Обновляем активную кнопку
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        button.classList.add('active');
+
+        // Фильтруем товары
+        const products = document.querySelectorAll('.product-card');
+        let visibleCount = 0;
+
+        products.forEach(card => {
+          const cardCategory = card.getAttribute('data-category-id');
+          
+          if (categoryId === 'all') {
+            card.style.display = '';
+            visibleCount++;
+          } else {
+            if (cardCategory === categoryId) {
+              card.style.display = '';
+              visibleCount++;
+            } else {
+              card.style.display = 'none';
+            }
+          }
+        });
+
+        // Если нет видимых товаров в выбранной категории
+        if (visibleCount === 0 && categoryId !== 'all') {
+          const empty = document.querySelector('.empty-state');
+          if (!empty) {
+            const productsList = document.querySelector('.products-list');
+            if (productsList) {
+              const emptyMsg = document.createElement('div');
+              emptyMsg.className = 'empty-state';
+              emptyMsg.style.cssText = 'display: block !important;';
+              emptyMsg.innerHTML = `
+                <div class="empty-state-icon">📦</div>
+                <p>В этой категории товаров нет.</p>
+              `;
+              productsList.parentElement.insertBefore(emptyMsg, productsList);
+            }
+          }
+        }
+      }
+
+      if (window.innerWidth <= 768) {
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+          link.addEventListener('click', () => {
+            document.getElementById('adminSidebar').classList.remove('visible');
+          });
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('adminSidebar');
+        const toggle = document.getElementById('menuToggle');
+        
+        if (window.innerWidth <= 768) {
+          if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.remove('visible');
+          }
+        }
+      });
+
+      function editProduct(id) {
+        fetch('/admin/products/' + id)
+          .then(response => response.json())
+          .then(product => {
+            document.getElementById('editName').value = product.name;
+            document.getElementById('editDescription').value = product.description || '';
+            document.getElementById('editPrice').value = product.price;
+            document.getElementById('editCategory').value = product.category_id || '';
+            document.getElementById('existingImage').value = product.image_path || '';
+            
+            // Заполняем поля размера
+            document.getElementById('editSizeOpen').value = product.size_open || '';
+            document.getElementById('editSizeClosed').value = product.size_closed || '';
+            document.getElementById('editWeightNet').value = product.weight_net || '';
+            document.getElementById('editWeightGross').value = product.weight_gross || '';
+            document.getElementById('editDiameter').value = product.diameter || '';
+            
+            // Заполняем поле "Что содержит набор"
+            document.getElementById('editContents').value = product.contents || '';
+            
+            // Заполняем поля "Доставка и возврат" и "Инструкции по уходу"
+            document.getElementById('editDeliveryReturn').value = product.delivery_return || '';
+            document.getElementById('editCareInstructions').value = product.care_instructions || '';
+            
+            const imagesContainer = document.getElementById('existingImagesContainer');
+            imagesContainer.innerHTML = '';
+            
+            if (product.images && product.images.length > 0) {
+              const title = document.createElement('div');
+              title.style.cssText = 'font-weight: 600; margin-bottom: 0.8rem; margin-top: 1rem;';
+              title.textContent = 'Загруженные изображения:';
+              imagesContainer.appendChild(title);
+              
+              const imagesGrid = document.createElement('div');
+              imagesGrid.className = 'existing-images';
+              
+              product.images.forEach(img => {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'image-item';
+                imgWrapper.innerHTML = `
+                  <img src="${img.image_path}" alt="товар">
+                  <button type="button" class="image-delete-btn" onclick="deleteProductImage(${product.id}, ${img.id}, this)">×</button>
+                `;
+                imagesGrid.appendChild(imgWrapper);
+              });
+              
+              imagesContainer.appendChild(imagesGrid);
+            }
+            
+            document.getElementById('editForm').action = '/admin/products/' + id + '/update';
+            document.getElementById('editModal').classList.add('show');
+          });
+      }
+      
+      function deleteProductImage(productId, imageId, btn) {
+        if (confirm('Удалить изображение?')) {
+          fetch(`/admin/products/${productId}/images/${imageId}/delete`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Удаляем элемент изображения
+                btn.closest('.image-item').remove();
+                
+                // Перезагружаем информацию о товаре для обновления превью
+                fetch(`/admin/products/${productId}`)
+                  .then(response => response.json())
+                  .then(product => {
+                    // Обновляем превью в таблице товаров если она видима
+                    const productRow = document.querySelector(`[data-product-id="${productId}"]`);
+                    if (productRow && product.image_path) {
+                      const previewImg = productRow.querySelector('.product-image');
+                      if (previewImg) {
+                        previewImg.src = product.image_path;
+                      }
+                    }
+                  })
+                  .catch(error => console.error('Ошибка обновления превью:', error));
+              }
+            })
+            .catch(error => console.error('Ошибка:', error));
+        }
+      }
+
+      function closeEditModal() {
+        document.getElementById('editModal').classList.remove('show');
+      }
+
+      document.getElementById('editModal').addEventListener('click', (e) => {
+        if (e.target.id === 'editModal') {
+          closeEditModal();
+        }
+      });
+
+      document.getElementById('templatesModal').addEventListener('click', (e) => {
+        if (e.target.id === 'templatesModal') {
+          closeTemplatesModal();
+        }
+      });
+    </script>
+</body>
+</html>

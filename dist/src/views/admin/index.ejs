@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель — HandWood</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/admin.css">
+    <style>
+      /* СПЕЦИФИЧНЫЕ СТИЛИ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ АДМИН ПАНЕЛИ */
+
+      .menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #4A2C1F;
+      }
+
+      .topbar-title {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #4A2C1F;
+      }
+
+      /* СЕТКА КАРТОЧЕК */
+      .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .card {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        border-top: 4px solid #8B5E3C;
+      }
+
+      .card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        transform: translateY(-4px);
+      }
+
+      .card.stats {
+        border-top-color: #D4704A;
+      }
+
+      .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .card-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #4A2C1F;
+        margin-bottom: 0.5rem;
+      }
+
+      .card-desc {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-stat {
+        background: #f5f3f0;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      .card-stat-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .card-stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #8B5E3C;
+        margin-top: 0.5rem;
+      }
+
+      .btn-primary {
+        display: inline-block;
+        background: linear-gradient(135deg, #8B5E3C 0%, #6B4423 100%);
+        color: white;
+        padding: 0.8rem 1.8rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: center;
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(139, 94, 60, 0.3);
+        transform: translateY(-2px);
+      }
+
+      /* СТАТИСТИКА */
+      .stats-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+      }
+
+      .stats-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #4A2C1F;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .stat-item {
+        background: linear-gradient(135deg, #f5f3f0 0%, #ede8e2 100%);
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 4px solid #8B5E3C;
+        transition: all 0.3s;
+      }
+
+      .stat-item:hover {
+        box-shadow: 0 4px 16px rgba(139, 94, 60, 0.15);
+      }
+
+      .stat-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #8B5E3C;
+      }
+
+      .footer-link {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .footer-link a {
+        color: #8B5E3C;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s;
+      }
+
+      .footer-link a:hover {
+        color: #6B4423;
+      }
+
+      /* МОБИЛЬНАЯ ВЕРСИЯ */
+      @media (max-width: 768px) {
+        .admin-sidebar {
+          width: 100%;
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          z-index: 1100;
+          transform: translateX(-100%);
+        }
+
+        .admin-sidebar.visible {
+          transform: translateX(0);
+        }
+
+        .admin-sidebar.hidden {
+          transform: translateX(-100%);
+        }
+
+        .admin-main {
+          margin-left: 0;
+          padding: 1rem;
+        }
+
+        .menu-toggle {
+          display: block;
+        }
+
+        .admin-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar-title {
+          font-size: 1.4rem;
+        }
+
+        .card {
+          padding: 1.5rem;
+        }
+
+        .sidebar-footer {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.5rem;
+        }
+
+        .sidebar-footer a {
+          padding: 0.8rem 0.5rem;
+        }
+
+        .admin-topbar {
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .admin-sidebar {
+          width: 90vw;
+          max-width: 250px;
+          transform: translateX(-100%);
+        }
+
+        .admin-sidebar.visible {
+          transform: translateX(0);
+        }
+
+        .admin-main {
+          padding: 0.75rem;
+        }
+
+        .topbar-title {
+          font-size: 1.2rem;
+        }
+
+        .card-title {
+          font-size: 1.1rem;
+        }
+
+        .stat-value {
+          font-size: 2rem;
+        }
+
+        .card {
+          padding: 1rem;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+      <!-- БОКОВАЯ ПАНЕЛЬ -->
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-logo">
+          <h2>🔐 HandWood</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+          <li><a href="/admin" class="active">📊 Панель управления</a></li>
+          <li><a href="/admin/products">📦 Товары</a></li>
+          <li><a href="/admin/categories">📂 Категории</a></li>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a href="/admin/change-password" class="pwd-btn">🔑 Смена пароля</a>
+          <a href="/admin/logout" class="logout-btn">🚪 Выход</a>
+        </div>
+      </aside>
+
+      <!-- ОСНОВНОЙ КОНТЕНТ -->
+      <main class="admin-main">
+        <!-- ТОП БАР -->
+        <div class="admin-topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleMenu()">☰</button>
+            <h1 class="topbar-title">Панель управления</h1>
+          </div>
+        </div>
+
+        <!-- КАРТОЧКИ БЫСТРОГО ДОСТУПА -->
+        <div class="admin-grid">
+          <div class="card">
+            <div class="card-icon">📦</div>
+            <h3 class="card-title">Товары</h3>
+            <p class="card-desc">Управление товарами в каталоге</p>
+            <div class="card-stat">
+              <div class="card-stat-label">Всего товаров</div>
+              <div class="card-stat-value"><%= products.length %></div>
+            </div>
+            <a href="/admin/products" class="btn-primary">Управлять</a>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">📂</div>
+            <h3 class="card-title">Категории</h3>
+            <p class="card-desc">Управление категориями товаров</p>
+            <div class="card-stat">
+              <div class="card-stat-label">Всего категорий</div>
+              <div class="card-stat-value"><%= categories.length %></div>
+            </div>
+            <a href="/admin/categories" class="btn-primary">Управлять</a>
+          </div>
+
+          <div class="card stats">
+            <div class="card-icon">📈</div>
+            <h3 class="card-title">Статус</h3>
+            <p class="card-desc">Важная информация о каталоге</p>
+            <div class="card-stat">
+              <div class="card-stat-label">⚠️ Товаров без категории</div>
+              <div class="card-stat-value"><%= products.filter(p => !p.category_id).length %></div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">📭 Пустых категорий</div>
+              <div class="card-stat-value"><%= categories.filter(c => !products.some(p => p.category_id === c.id)).length %></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- РАСШИРЕННАЯ СТАТИСТИКА -->
+        <div class="stats-section">
+          <div class="stats-title">📊 Статистика каталога</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-label">📦 Продукты</div>
+              <div class="stat-value"><%= products.length %></div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">📂 Категории</div>
+              <div class="stat-value"><%= categories.length %></div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">✅ Товаров с категорией</div>
+              <div class="stat-value"><%= products.filter(p => p.category_id).length %></div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">💎 Средняя цена</div>
+              <div class="stat-value"><%= products.length > 0 ? (products.reduce((sum, p) => sum + p.price, 0) / products.length).toFixed(0) : 0 %>₽</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-link">
+          <a href="/">← На главную</a>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      function toggleMenu() {
+        const sidebar = document.getElementById('adminSidebar');
+        sidebar.classList.toggle('visible');
+        sidebar.classList.toggle('hidden');
+      }
+
+      // Закрывать меню при клике на пункт навигации на мобильных
+      if (window.innerWidth <= 768) {
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+          link.addEventListener('click', () => {
+            document.getElementById('adminSidebar').classList.remove('visible');
+          });
+        });
+      }
+
+      // Закрывать меню при клике вне его на мобильных
+      document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('adminSidebar');
+        const toggle = document.getElementById('menuToggle');
+        
+        if (window.innerWidth <= 768) {
+          if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.remove('visible');
+          }
+        }
+      });
+    </script>
+</body>
+</html>
