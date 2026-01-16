@@ -7,6 +7,8 @@ const bcrypt = require("bcrypt");
 const session = require("express-session");
 require("dotenv").config();
 
+const { createFirstAdmin } = require("./scripts/init-admin");
+
 const {
   getProducts,
   getCategories,
@@ -691,7 +693,14 @@ app.post(
 );
 
 // Запуск сервера
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
   console.log(`🔧 Админ панель доступна на http://localhost:${PORT}/admin`);
+  
+  // Автоматическая инициализация админа при запуске
+  try {
+    await createFirstAdmin();
+  } catch (error) {
+    console.error("⚠️  Не удалось инициализировать админа:", error.message);
+  }
 });
