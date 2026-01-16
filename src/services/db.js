@@ -4,13 +4,15 @@ const fs = require("fs").promises;
 
 // Путь к базе данных
 const dbPath = path.join(__dirname, "../database.db");
+console.log("📁 Путь к БД:", dbPath);
 
 // Создание соединения с БД
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.error("Ошибка подключения к БД:", err.message);
+    console.error("❌ Ошибка подключения к БД:", err.message);
   } else {
     console.log("✅ Подключено к SQLite базе данных");
+    console.log("✅ БД файл создан/открыт в:", dbPath);
     initDatabase();
   }
 });
