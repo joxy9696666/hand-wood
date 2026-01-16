@@ -15,31 +15,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// Инициализация таблиц
+// Инициализация таблиц (синхронная)
 function initDatabase() {
-  // Таблица администраторов
-  db.run(`
-    CREATE TABLE IF NOT EXISTS admins (
+  const tables = [
+    // Таблица администраторов
+    `CREATE TABLE IF NOT EXISTS admins (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Таблица категорий
-  db.run(`
-    CREATE TABLE IF NOT EXISTS categories (
+    )`,
+    // Таблица категорий
+    `CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       description TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Таблица товаров
-  db.run(`
-    CREATE TABLE IF NOT EXISTS products (
+    )`,
+    // Таблица товаров
+    `CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       description TEXT,
@@ -56,81 +50,99 @@ function initDatabase() {
       care_instructions TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (category_id) REFERENCES categories (id)
-    )
-  `);
-
-  // Таблица для множественных изображений товара
-  db.run(`
-    CREATE TABLE IF NOT EXISTS product_images (
+    )`,
+    // Таблица для множественных изображений товара
+    `CREATE TABLE IF NOT EXISTS product_images (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,
       image_path TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
-    )
-  `);
+    )`,
+  ];
 
-  // Миграция: Добавляем новые колонки если их еще нет
-  const migrateProducts = () => {
-    const newColumns = [
-      "size_open",
-      "size_closed",
-      "weight_net",
-      "weight_gross",
-      "diameter",
-      "contents",
-      "delivery_return",
-      "care_instructions",
-    ];
+  // Создаем все таблицы синхронно
+  tables.forEach((sql) => {
+    db.run(sql, (err) => {
+      if (err) console.error("Ошибка создания таблицы:", err.message);
+    });
+  });
 
-    console.log("🔄 Проверка структуры таблицы products...");
+  // Запускаем миграцию после небольшой задержки (чтобы таблицы успели создаться)
+  setTimeout(() => migrateProducts(), 500);
+}
 
-    db.all("PRAGMA table_info(products)", (err, columns) => {
-      if (err) {
-        console.error("Ошибка проверки структуры таблицы:", err);
-        return;
-      }
+// Миграция: Добавляем новые колонки если их еще нет
+const migrateProducts = () => {
+  const newColumns = [
+    "size_open",
+    "size_closed",
+    "weight_net",
+    "weight_gross",
+    "diameter",
+    "contents",
+    "delivery_return",
+    "care_instructions",
+  ];
 
-      const existingColumns = columns.map((col) => col.name);
-      console.log("📋 Существующие колонки:", existingColumns.length > 0 ? existingColumns : "Таблица пуста");
+  console.log("🔄 Проверка структуры таблицы products...");
 
-      let addedCount = 0;
-      let checkedCount = 0;
-      const columnsToAdd = newColumns.filter((c) => !existingColumns.includes(c));
+  db.all("PRAGMA table_info(products)", (err, columns) => {
+    if (err) {
+      console.error("Ошибка проверки структуры таблицы:", err);
+      return;
+    }
 
-      if (columnsToAdd.length === 0) {
-        console.log("✅ Все необходимые колонки уже существуют. Миграция не требуется.");
-        return;
-      }
+    const existingColumns = columns.map((col) => col.name);
+    console.log(
+      "📋 Существующие колонки:",
+      existingColumns.length > 0 ? existingColumns : "Таблица пуста"
+    );
 
-      columnsToAdd.forEach((columnName) => {
-        const query = `ALTER TABLE products ADD COLUMN ${columnName} TEXT`;
-        db.run(query, (err) => {
-          checkedCount++;
-          if (err) {
-            // Игнорируем ошибки дублирования - колонка уже существует
-            if (err.message && err.message.includes("duplicate column")) {
-              console.log(`⚠️  Колонка ${columnName} уже существует, пропускаем`);
-            } else {
-              console.error(`❌ Ошибка добавления колонки ${columnName}:`, err.message);
-            }
+    let addedCount = 0;
+    let checkedCount = 0;
+    const columnsToAdd = newColumns.filter(
+      (c) => !existingColumns.includes(c)
+    );
+
+    if (columnsToAdd.length === 0) {
+      console.log(
+        "✅ Все необходимые колонки уже существуют. Миграция не требуется."
+      );
+      return;
+    }
+
+    columnsToAdd.forEach((columnName) => {
+      const query = `ALTER TABLE products ADD COLUMN ${columnName} TEXT`;
+      db.run(query, (err) => {
+        checkedCount++;
+        if (err) {
+          // Игнорируем ошибки дублирования - колонка уже существует
+          if (err.message && err.message.includes("duplicate column")) {
+            console.log(
+              `⚠️  Колонка ${columnName} уже существует, пропускаем`
+            );
           } else {
-            addedCount++;
-            console.log(`✅ Колонка ${columnName} успешно добавлена`);
+            console.error(
+              `❌ Ошибка добавления колонки ${columnName}:`,
+              err.message
+            );
           }
+        } else {
+          addedCount++;
+          console.log(`✅ Колонка ${columnName} успешно добавлена`);
+        }
 
-          // Когда все проверено, выводим итог
-          if (checkedCount === columnsToAdd.length) {
-            console.log(`\n✨ Миграция завершена! Добавлено колонок: ${addedCount}`);
-          }
-        });
+        // Когда все проверено, выводим итог
+        if (checkedCount === columnsToAdd.length) {
+          console.log(
+            `\n✨ Миграция завершена! Добавлено колонок: ${addedCount}`
+          );
+        }
       });
     });
-  };
-
-  // Запускаем миграцию
-  migrateProducts();
-}
+  });
+};
 
 // Функции для работы с администраторами
 const addAdmin = (username, password) => {

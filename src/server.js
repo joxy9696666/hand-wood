@@ -248,21 +248,17 @@ app.post("/api/order", async (req, res) => {
         .json({ success: false, message: "Укажите номер телефона" });
     }
     if (!validatePhone(phone)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message:
-            "Неверный формат номера телефона. Используйте +7XXXXXXXXXX или +375XXXXXXXXX",
-        });
+      return res.status(400).json({
+        success: false,
+        message:
+          "Неверный формат номера телефона. Используйте +7XXXXXXXXXX или +375XXXXXXXXX",
+      });
     }
     if (!message || message.length < 5) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Сообщение должно быть минимум 5 символов",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Сообщение должно быть минимум 5 символов",
+      });
     }
 
     // HTML письма (оптимизировано)
@@ -298,12 +294,10 @@ app.post("/api/order", async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка отправки почты:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Ошибка при отправке заказа. Пожалуйста, попробуйте позже.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Ошибка при отправке заказа. Пожалуйста, попробуйте позже.",
+    });
   }
 });
 
@@ -703,11 +697,14 @@ app.post(
 app.listen(PORT, async () => {
   console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
   console.log(`🔧 Админ панель доступна на http://localhost:${PORT}/admin`);
-  
+
   // Автоматическая инициализация админа при запуске
-  try {
-    await createFirstAdmin();
-  } catch (error) {
-    console.error("⚠️  Не удалось инициализировать админа:", error.message);
-  }
+  // Задержка 1 секунда чтобы БД успела инициализироваться
+  setTimeout(async () => {
+    try {
+      await createFirstAdmin();
+    } catch (error) {
+      console.error("⚠️  Не удалось инициализировать админа:", error.message);
+    }
+  }, 1000);
 });
