@@ -86,10 +86,10 @@ app.use(
   session({
     secret: sessionSecret,
     store: sessionStore,
-    resave: false,
+    resave: true, // Важно: true чтобы сохранять сессию при каждом запросе
     saveUninitialized: true, // Важно: true чтобы отправить куку сразу
     cookie: {
-      secure: isSecure, // true для HTTPS в production
+      secure: false, // ОТЛАДКА: false для проверки что куки отправляются
       httpOnly: true,
       sameSite: "lax", // Позволяет кукам отправляться при редиректе
       maxAge: 24 * 60 * 60 * 1000, // 24 часа
@@ -387,9 +387,12 @@ app.post("/admin/login", async (req, res) => {
 
     console.log("✅ Пароль верный! Создаю сессию для пользователя:", username);
     
-    // Просто устанавливаем данные в сессию
+    // Устанавливаем данные в сессию
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
+    
+    // Явно обновляем куку
+    req.session.touch();
     
     console.log("📝 После установки данных:");
     console.log("   Session ID:", req.sessionID);
