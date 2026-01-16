@@ -5,7 +5,8 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
-const SQLiteStore = require("connect-sqlite3")(session);
+// Для отладки - используем MemoryStore вместо SQLiteStore
+const MemoryStore = require("express-session").MemoryStore;
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
@@ -70,11 +71,9 @@ const sessionSecret = process.env.SESSION_SECRET || "handwood-secret-key";
 console.log("🔑 SESSION_SECRET установлен:", sessionSecret ? "✅ ДА" : "❌ НЕТ");
 console.log("🔑 SESSION_SECRET длина:", sessionSecret.length, "символов");
 
-// Настройка сессий с SQLite Store для production
-const sessionStore = new SQLiteStore({
-  db: "sessions.db",
-  dir: path.join(__dirname, ".."),
-});
+// Используем MemoryStore для отладки сессий (заменяем на SQLiteStore в production позже)
+const sessionStore = new MemoryStore();
+console.log("💾 Используется MemoryStore для отладки");
 
 // Определяем secure флаг
 const isProduction = process.env.NODE_ENV === "production";
@@ -100,11 +99,17 @@ app.use(
 
 // Логирование сессий (для отладки) - ДОЛЖНО БЫТЬ ПОСЛЕ session middleware!
 app.use((req, res, next) => {
-  console.log(`\n📍 ${req.method} ${req.path}`);
-  console.log(`   Incoming Cookies: ${JSON.stringify(req.cookies || {})}`);
-  console.log(`   Request headers 'cookie': ${req.get('cookie') || "not set"}`);
-  console.log(`   Session ID: ${req.sessionID}`);
-  console.log(`   adminId: ${req.session.adminId || "undefined"}`);
+  if (req.path === "/") {
+    console.log(`\n📍 ${req.method} ${req.path}`);
+    console.log(`   Session ID: ${req.sessionID}`);
+    console.log(`   Cookie header: ${req.get('cookie') || "none"}`);
+    console.log(`   adminId: ${req.session.adminId || "undefined"}`);
+  } else if (req.path.startsWith("/admin")) {
+    console.log(`\n📍 ${req.method} ${req.path}`);
+    console.log(`   Session ID: ${req.sessionID}`);
+    console.log(`   Cookie header: ${req.get('cookie') || "none"}`);
+    console.log(`   adminId: ${req.session.adminId || "undefined"}`);
+  }
   next();
 });
 
@@ -382,33 +387,18 @@ app.post("/admin/login", async (req, res) => {
 
     console.log("✅ Пароль верный! Создаю сессию для пользователя:", username);
     
+    // Просто устанавливаем данные в сессию
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
     
-    console.log("📝 Session перед save():", {
-      id: req.sessionID,
-      adminId: req.session.adminId,
-      data: req.session
-    });
+    console.log("📝 После установки данных:");
+    console.log("   Session ID:", req.sessionID);
+    console.log("   adminId:", req.session.adminId);
+    console.log("   Данные сессии:", req.session);
     
-    // Сохраняем сессию и затем редиректим
-    req.session.save((err) => {
-      if (err) {
-        console.error("❌ Ошибка сохранения сессии:", err);
-        return res.render("admin/login", {
-          title: "Вход в админ панель",
-          error: "Ошибка при создании сессии",
-        });
-      }
-      
-      console.log("✅ Сессия сохранена!");
-      console.log("✅ ID сессии:", req.sessionID);
-      console.log("✅ adminId в сессии:", req.session.adminId);
-      console.log("✅ Response headers перед редиректом:", res.getHeaders());
-      console.log("✅ Set-Cookie header:", res.getHeaders()["set-cookie"]);
-      console.log("✅ Redirect на /admin");
-      res.redirect("/admin");
-    });
+    // Express сам отправит Set-Cookie header при редиректе
+    console.log("✅ Выполняю redirect на /admin");
+    res.redirect("/admin");
   } catch (error) {
     console.error("❌ Ошибка при входе:", error);
     res.render("admin/login", {
