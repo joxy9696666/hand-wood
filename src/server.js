@@ -65,15 +65,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Логирование сессий (для отладки)
-app.use((req, res, next) => {
-  console.log(`\n📍 ${req.method} ${req.path}`);
-  console.log(`   Session ID: ${req.sessionID}`);
-  console.log(`   adminId: ${req.session.adminId || "undefined"}`);
-  console.log(`   Cookies: ${JSON.stringify(req.cookies || {})}`);
-  next();
-});
-
 // Логирование SESSION_SECRET (для отладки)
 const sessionSecret = process.env.SESSION_SECRET || "handwood-secret-key";
 console.log("🔑 SESSION_SECRET установлен:", sessionSecret ? "✅ ДА" : "❌ НЕТ");
@@ -105,6 +96,15 @@ app.use(
     },
   })
 );
+
+// Логирование сессий (для отладки) - ДОЛЖНО БЫТЬ ПОСЛЕ session middleware!
+app.use((req, res, next) => {
+  console.log(`\n📍 ${req.method} ${req.path}`);
+  console.log(`   Session ID: ${req.sessionID}`);
+  console.log(`   adminId: ${req.session.adminId || "undefined"}`);
+  console.log(`   Cookies: ${JSON.stringify(req.cookies || {})}`);
+  next();
+});
 
 // Статические файлы (объединено в одну декларацию)
 app.use(express.static(path.join(__dirname, "../public")));
