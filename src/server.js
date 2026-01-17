@@ -5,8 +5,7 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
-// Для отладки - используем MemoryStore вместо SQLiteStore
-const MemoryStore = require("express-session").MemoryStore;
+const SQLiteStore = require("connect-sqlite3")(session);
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
@@ -61,6 +60,9 @@ const uploadMultiple = multer({ storage }).array("images", 10);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// ВАЖНО: Доверяем прокси (Railway) чтобы корректно определить secure HTTPS соединение
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -68,19 +70,32 @@ app.use(cookieParser());
 
 // Логирование SESSION_SECRET (для отладки)
 const sessionSecret = process.env.SESSION_SECRET || "handwood-secret-key";
-console.log("🔑 SESSION_SECRET установлен:", sessionSecret ? "✅ ДА" : "❌ НЕТ");
+console.log(
+  "🔑 SESSION_SECRET установлен:",
+  sessionSecret ? "✅ ДА" : "❌ НЕТ"
+);
 console.log("🔑 SESSION_SECRET длина:", sessionSecret.length, "символов");
 
-// Используем MemoryStore для отладки сессий (заменяем на SQLiteStore в production позже)
-const sessionStore = new MemoryStore();
-console.log("💾 Используется MemoryStore для отладки");
-
-// Определяем secure флаг
+// Используем SQLiteStore на production, MemoryStore на development
 const isProduction = process.env.NODE_ENV === "production";
-const isSecure = isProduction || process.env.RAILWAY_ENVIRONMENT === "production";
+const sessionStore = isProduction
+  ? new SQLiteStore({
+      db: "sessions.db",
+      dir: path.join(__dirname, ".."),
+    })
+  : new (require("express-session").MemoryStore)();
 
-console.log("🔒 Cookies secure flag:", isSecure ? "true (HTTPS)" : "false (HTTP)");
+console.log("💾 Session store:", isProduction ? "SQLiteStore (production)" : "MemoryStore (development)");
+
+// Определяем secure флаг - теперь работает с trust proxy
+const isSecure = isProduction; // На production требуется HTTPS
+
+console.log(
+  "🔒 Cookies secure flag:",
+  isSecure ? "true (HTTPS)" : "false (HTTP)"
+);
 console.log("🔒 Node environment:", process.env.NODE_ENV);
+console.log("🔒 Trust proxy enabled для Railway");
 
 app.use(
   session({
@@ -89,9 +104,9 @@ app.use(
     resave: true, // Важно: true чтобы сохранять сессию при каждом запросе
     saveUninitialized: true, // Важно: true чтобы отправить куку сразу
     cookie: {
-      secure: false, // ОТЛАДКА: false для проверки что куки отправляются
-      httpOnly: true,
-      sameSite: "lax", // Позволяет кукам отправляться при редиректе
+      secure: isSecure, // true на production (HTTPS), false на development (HTTP)
+      httpOnly: true, // Защита от XSS - JS не может прочитать куку
+      sameSite: "lax", // Защита от CSRF - куки только для одного домена
       maxAge: 24 * 60 * 60 * 1000, // 24 часа
     },
   })
@@ -102,12 +117,12 @@ app.use((req, res, next) => {
   if (req.path === "/") {
     console.log(`\n📍 ${req.method} ${req.path}`);
     console.log(`   Session ID: ${req.sessionID}`);
-    console.log(`   Cookie header: ${req.get('cookie') || "none"}`);
+    console.log(`   Cookie header: ${req.get("cookie") || "none"}`);
     console.log(`   adminId: ${req.session.adminId || "undefined"}`);
   } else if (req.path.startsWith("/admin")) {
     console.log(`\n📍 ${req.method} ${req.path}`);
     console.log(`   Session ID: ${req.sessionID}`);
-    console.log(`   Cookie header: ${req.get('cookie') || "none"}`);
+    console.log(`   Cookie header: ${req.get("cookie") || "none"}`);
     console.log(`   adminId: ${req.session.adminId || "undefined"}`);
   }
   next();
@@ -124,7 +139,7 @@ const requireAdmin = (req, res, next) => {
   console.log("   Session ID:", req.sessionID);
   console.log("   adminId в сессии:", req.session.adminId);
   console.log("   Вся сессия:", req.session);
-  
+
   if (!req.session.adminId) {
     console.log("❌ adminId НЕ найден в сессии, редирект на /admin/login");
     return res.redirect("/admin/login");
@@ -362,7 +377,7 @@ app.post("/admin/login", async (req, res) => {
 
   try {
     console.log("🔐 Попытка входа с пользователем:", username);
-    
+
     const admin = await getAdminByUsername(username);
 
     if (!admin) {
@@ -374,7 +389,7 @@ app.post("/admin/login", async (req, res) => {
     }
 
     console.log("✅ Пользователь найден, проверяю пароль...");
-    
+
     const isPasswordValid = await bcrypt.compare(password, admin.password);
 
     if (!isPasswordValid) {
@@ -386,19 +401,19 @@ app.post("/admin/login", async (req, res) => {
     }
 
     console.log("✅ Пароль верный! Создаю сессию для пользователя:", username);
-    
+
     // Устанавливаем данные в сессию
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
-    
+
     // Явно обновляем куку
     req.session.touch();
-    
+
     console.log("📝 После установки данных:");
     console.log("   Session ID:", req.sessionID);
     console.log("   adminId:", req.session.adminId);
     console.log("   Данные сессии:", req.session);
-    
+
     // Express сам отправит Set-Cookie header при редиректе
     console.log("✅ Выполняю redirect на /admin");
     res.redirect("/admin");
